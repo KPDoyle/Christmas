@@ -2,7 +2,7 @@ import { get, list, put } from '@vercel/blob';
 import { gifs } from '../lib/gifs.js';
 import { findGifs } from '../lib/discovery.js';
 import { createHash, createHmac } from 'node:crypto';
-import { collections, getCard } from '../lib/postcards.js';
+import { collections } from '../lib/postcards.js';
 const settingsPath = 'settings/2026-topic.txt';
 async function selectedTopic() {
   const result = await get(settingsPath, {access:'private',useCache:false});
@@ -66,10 +66,10 @@ export default async function handler(req, res) {
       const saved=await get('topics/'+requested+'.json',{access:'private',useCache:false});
       if(saved?.statusCode!==200)return res.status(404).send('Topic unavailable');
       const collection=await new Response(saved.stream).json();
-      return res.json({topic:collection.name,setup:'',punchline:'',media:collection.clips[day-1]});
+      return res.json({topic:collection.name,media:collection.clips[day-1]});
     }
     const topic=Object.hasOwn(collections,requested)?requested:await selectedTopic();
-    return res.json({...getCard(topic,day),media:gifs[topic][day-1]});
+    return res.json({topic:collections[topic].name,media:gifs[topic][day-1]});
   }
   const photo = await get(path,{access:'private',useCache:false});
   if (photo?.statusCode!==200) return res.status(404).send('A photo has yet to arrive for this door.');

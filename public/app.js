@@ -89,8 +89,6 @@ async function openDay(n){
     if(current!==request)return;
     opened.add(n);saveProgress();showOpened(el('door-'+n),n);
     el('series').textContent=card.topic;
-    el('setup').textContent=card.setup;
-    el('punch').textContent=card.punchline;
     if(card.media){
       const frame=document.createElement('iframe');
       frame.src='https://giphy.com/embed/'+encodeURIComponent(card.media.id);
