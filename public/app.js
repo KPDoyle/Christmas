@@ -5,6 +5,7 @@ const headers={Authorization:'Bearer '+token};
 const windows=[[8,12],[24,12],[38,13],[66,17],[76,17],[91,10],[6,25],[25,25],[38,26],[65,29],[75,29],[87,27],[95,27],[10,36],[21,36],[39,35],[66,43],[78,43],[9,62],[20,60],[27,62],[38,65],[76,56],[87,57],[94,63]];
 const marks=['🎄','🕯️','🦌','🎁','🛷','🔔','🧦','🍪','⛄','🕊️'];
 let chosenTopic=params.get('topic') || '';
+const customTopics=new Map();
 let state={}, day=0, request=0, objectUrl;
 async function refresh(){
   const r=await fetch('/api/calendar',{headers});
@@ -15,6 +16,7 @@ async function refresh(){
     el('hint').textContent='All 25 doors are open for testing.';
   }
   if(state.guest){
+    state.topics.push(...customTopics.values());
     if(!state.topics.some(t=>t.id===chosenTopic)) chosenTopic=state.topic;
     el('testLink').href='/#test='+state.previewKey+'&topic='+encodeURIComponent(chosenTopic);
     el('editor').hidden=false;
@@ -39,7 +41,7 @@ async function refresh(){
 }
 async function openDay(n){
   const current=++request;day=n;
-  el('card').hidden=true;
+  el('card').hidden=true;el('media').replaceChildren();
   if(objectUrl) URL.revokeObjectURL(objectUrl);
   el('date').textContent=n+' December';el('photo').hidden=true;el('upload').hidden=!state.guest;
   el('upload').querySelector('input').value='';
@@ -61,6 +63,15 @@ async function openDay(n){
     el('series').textContent=card.topic;
     el('setup').textContent=card.setup;
     el('punch').textContent=card.punchline;
+    if(card.media){
+      const frame=document.createElement('iframe');
+      frame.src='https://giphy.com/embed/'+encodeURIComponent(card.media.id);
+      frame.title=card.media.title;frame.allowFullscreen=true;
+      const source=document.createElement('a');
+      source.href=card.media.page;source.target='_blank';source.rel='noopener noreferrer';
+      source.textContent='View on GIPHY · '+card.media.title;
+      el('media').replaceChildren(frame,source);
+    }
     el('card').hidden=false;
     el('notice').textContent='';
     const r=await fetch('/api/calendar?day='+n,{headers});
@@ -70,6 +81,7 @@ async function openDay(n){
     objectUrl=URL.createObjectURL(blob);el('photo').src=objectUrl;el('photo').alt='Your photo for '+n+' December';el('photo').hidden=false;el('notice').textContent='';
   }catch{if(current===request)el('notice').textContent='Connection lost. Please try again.'}
 }
+el('popup').addEventListener('close',()=>{request++;el('media').replaceChildren()});
 el('close').onclick=()=>el('popup').close();
 el('share').onclick=async()=>{
   const url=location.origin+'/#gift='+state.guest+'&topic='+encodeURIComponent(chosenTopic);
@@ -100,4 +112,18 @@ el('topics').onchange=e=>{
   el('testLink').href='/#test='+state.previewKey+'&topic='+encodeURIComponent(chosenTopic);
   el('share').textContent='Copy invitation';
   el('saved').textContent='Ready to share · '+e.currentTarget.selectedOptions[0].text;
+};
+
+el('discover').onsubmit=async e=>{
+  e.preventDefault();
+  const button=e.currentTarget.querySelector('button');
+  button.disabled=true;el('share').disabled=true;el('saved').textContent='Finding 25 different GIFs…';
+  try{
+    const r=await fetch('/api/calendar?discover=1',{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify({name:el('interest').value})});
+    if(!r.ok)throw Error(r.status===422?'Try a broader interest to find 25 GIFs.':'Search unavailable. Try again or choose a prepared topic.');
+    const t=await r.json();
+    if(!customTopics.has(t.id))el('topics').add(new Option(t.name,t.id));
+    customTopics.set(t.id,t);el('topics').value=t.id;el('topics').dispatchEvent(new Event('change'));
+  }catch(error){el('saved').textContent=error.message}
+  finally{button.disabled=false;el('share').disabled=false}
 };
