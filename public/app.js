@@ -2,7 +2,9 @@ const el=id=>document.getElementById(id);
 const params=new URLSearchParams(location.hash.slice(1));
 const token=params.get('admin') || params.get('gift') || params.get('test') || '';
 const headers={Authorization:'Bearer '+token};
+const windows=[[8,12],[24,12],[38,13],[66,17],[76,17],[91,10],[6,25],[25,25],[38,26],[65,29],[75,29],[87,27],[95,27],[10,36],[21,36],[39,35],[66,43],[78,43],[9,62],[20,60],[27,62],[38,65],[76,56],[87,57],[94,63]];
 const marks=['🎄','🕯️','🦌','🎁','🛷','🔔','🧦','🍪','⛄','🕊️'];
+let chosenTopic=params.get('topic') || '';
 let state={}, day=0, request=0, objectUrl;
 async function refresh(){
   const r=await fetch('/api/calendar',{headers});
@@ -13,10 +15,11 @@ async function refresh(){
     el('hint').textContent='All 25 doors are open for testing.';
   }
   if(state.guest){
-    el('testLink').href='/#test='+state.previewKey;
+    if(!state.topics.some(t=>t.id===chosenTopic)) chosenTopic=state.topic;
+    el('testLink').href='/#test='+state.previewKey+'&topic='+encodeURIComponent(chosenTopic);
     el('editor').hidden=false;
     el('topics').replaceChildren(...state.topics.map(t=>new Option(t.name,t.id)));
-    el('topics').value=state.topic;
+    el('topics').value=chosenTopic;
     el('mode').textContent='CALENDAR ADMIN';
     el('share').hidden=false;
     el('hint').textContent=(state.filled.length)+' personal photos added. Preview any door or add a photo to its Christmas postcard.';
@@ -25,6 +28,8 @@ async function refresh(){
   for(let n=1;n<=25;n++){
     const b=document.createElement('button');
     b.className='door'+(n<=state.unlocked?' available':'');
+    const [x,y]=windows[n-1];
+    b.style.left=x+'%';b.style.top=y+'%';
     b.dataset.mark=marks[(n*3+Math.floor(n/5))%5];
     b.textContent=String(n).padStart(2,'0');
     b.setAttribute('aria-label',n+' December'+(state.filled?.includes(n)?', photo ready':''));
@@ -44,7 +49,8 @@ async function openDay(n){
     el('notice').textContent='This door opens on '+n+' December at midnight UK time.';return;
   }
   try{
-    const cardResponse=await fetch('/api/calendar?card=1&day='+n,{headers});
+    const query=new URLSearchParams({card:'1',day:n,topic:chosenTopic});
+    const cardResponse=await fetch('/api/calendar?'+query,{headers});
     if(current!==request)return;
     if(!cardResponse.ok){
       el('notice').textContent=cardResponse.status===423?'This door opens on '+n+' December.':cardResponse.status===403?'Use the guest link from your sender to open this door.':'This postcard could not load. Please reopen the door.';
@@ -66,7 +72,7 @@ async function openDay(n){
 }
 el('close').onclick=()=>el('popup').close();
 el('share').onclick=async()=>{
-  const url=location.origin+'/#gift='+state.guest;
+  const url=location.origin+'/#gift='+state.guest+'&topic='+encodeURIComponent(chosenTopic);
   try{await navigator.clipboard.writeText(url);el('share').textContent='Guest link copied'}catch{prompt('Copy your guest link',url)}
 };
 const input=el('upload').querySelector('input');
@@ -89,15 +95,9 @@ input.onchange=async()=>{
 };
 refresh().catch(e=>el('hint').textContent=e.message);
 
-el('topics').onchange=async e=>{
-  const select=e.currentTarget,topic=select.value;
-  select.disabled=true;
-  el('saved').textContent='Saving…';
-  try{
-    const r=await fetch('/api/calendar',{method:'PUT',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify({topic})});
-    if(!r.ok)throw Error();
-    state.topic=topic;
-    el('saved').textContent='Saved for all 25 doors';
-  }catch{select.value=state.topic;el('saved').textContent='Could not save. Please try again.'}
-  finally{select.disabled=false}
+el('topics').onchange=e=>{
+  chosenTopic=e.currentTarget.value;
+  el('testLink').href='/#test='+state.previewKey+'&topic='+encodeURIComponent(chosenTopic);
+  el('share').textContent='Copy invitation';
+  el('saved').textContent='Ready to share · '+e.currentTarget.selectedOptions[0].text;
 };

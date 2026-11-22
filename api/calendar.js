@@ -44,7 +44,7 @@ export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
   if (!admin && !preview && token !== guest) return res.status(403).send('Open your invitation link to see the photos.');
   if (!admin && day>unlocked) return res.status(423).send('Opens on '+day+' December.');
-  if (req.query.card === '1') return res.json(getCard(await selectedTopic(), day));
+  if (req.query.card === '1') return res.json(getCard(Object.hasOwn(collections,req.query.topic) ? req.query.topic : await selectedTopic(), day));
   const photo = await get(path,{access:'private',useCache:false});
   if (photo?.statusCode!==200) return res.status(404).send('A photo has yet to arrive for this door.');
   res.setHeader('Content-Type','image/jpeg');
