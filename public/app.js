@@ -7,6 +7,31 @@ const marks=['🎄','🕯️','🦌','🎁','🛷','🔔','🧦','🍪','⛄','�
 let chosenTopic=params.get('topic') || '';
 const customTopics=new Map();
 let state={}, day=0, request=0, objectUrl;
+const role=params.has('admin')?'admin':params.has('test')?'preview':'guest';
+const progressKey='december-post:2026:'+role+':'+(params.get('topic')||'default');
+function readProgress(){
+  try{return JSON.parse(localStorage.getItem(progressKey))||{}}catch{return {}}
+}
+const previous=readProgress();
+const opened=new Set(Array.isArray(previous.days)?previous.days:[]);
+const visit=opened.size?(Number(previous.visit)||0)+1:0;
+function saveProgress(){
+  const latest=readProgress();
+  for(const n of latest.days||[])opened.add(n);
+  try{localStorage.setItem(progressKey,JSON.stringify({days:[...opened],visit:Math.max(visit,Number(latest.visit)||0)}))}catch{}
+}
+if(opened.size)saveProgress();
+const paintings=['carol','market','inn'];
+const street=document.querySelector('.street');
+for(const [index,variable] of ['--street','--market','--inn'].entries()){
+  street.style.setProperty(variable,'url(/'+paintings[(visit+index)%3]+'.webp)');
+}
+function showOpened(button,n){
+  button.classList.add('opened');
+  button.setAttribute('aria-label',n+' December, opened. Revisit postcard');
+  button.style.setProperty('--picture','url(/'+paintings[(n-1)%3]+'.webp)');
+  button.style.setProperty('--crop',(12+(n*19)%76)+'% '+(24+(n*13)%56)+'%');
+}
 async function refresh(){
   const r=await fetch('/api/calendar',{headers});
   if(!r.ok) throw Error('The calendar could not load. Please refresh.');
@@ -30,12 +55,14 @@ async function refresh(){
   for(let n=1;n<=25;n++){
     const b=document.createElement('button');
     b.className='door'+(n<=state.unlocked?' available':'');
-    const [x,y]=windows[n-1];
+    const [x,y]=windows[(n-1+visit*7)%25];
     b.style.left=x+'%';b.style.top=y+'%';
     b.dataset.mark=marks[(n*3+Math.floor(n/5))%5];
     b.textContent=String(n).padStart(2,'0');
     b.setAttribute('aria-label',n+' December'+(state.filled?.includes(n)?', photo ready':''));
     if(state.filled?.includes(n)){const tick=document.createElement('b');tick.textContent='✓';b.append(tick)}
+    b.id='door-'+n;
+    if(opened.has(n))showOpened(b,n);
     b.onclick=()=>openDay(n);el('grid').append(b);
   }
 }
@@ -60,6 +87,7 @@ async function openDay(n){
     }
     const card=await cardResponse.json();
     if(current!==request)return;
+    opened.add(n);saveProgress();showOpened(el('door-'+n),n);
     el('series').textContent=card.topic;
     el('setup').textContent=card.setup;
     el('punch').textContent=card.punchline;
