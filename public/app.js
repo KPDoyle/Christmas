@@ -1,6 +1,6 @@
 const el=id=>document.getElementById(id);
 const params=new URLSearchParams(location.hash.slice(1));
-const token=params.get('admin') || params.get('gift') || '';
+const token=params.get('admin') || params.get('gift') || params.get('test') || '';
 const headers={Authorization:'Bearer '+token};
 const marks=['🎄','🕯️','🦌','🎁','🛷','🔔','🧦','🍪','⛄','🕊️'];
 let state={}, day=0, request=0, objectUrl;
@@ -8,7 +8,12 @@ async function refresh(){
   const r=await fetch('/api/calendar',{headers});
   if(!r.ok) throw Error('The calendar could not load. Please refresh.');
   state=await r.json();
+  if(state.preview){
+    el('mode').textContent='TEST CALENDAR';
+    el('hint').textContent='All 25 doors are open for testing.';
+  }
   if(state.guest){
+    el('testLink').href='/#test='+state.previewKey;
     el('editor').hidden=false;
     el('topics').replaceChildren(...state.topics.map(t=>new Option(t.name,t.id)));
     el('topics').value=state.topic;
