@@ -90,13 +90,11 @@ async function openDay(n){
     opened.add(n);saveProgress();showOpened(el('door-'+n),n);
     el('series').textContent=card.topic;
     if(card.media){
-      const frame=document.createElement('iframe');
-      frame.src='https://giphy.com/embed/'+encodeURIComponent(card.media.id);
-      frame.title=card.media.title;frame.allowFullscreen=true;
-      const source=document.createElement('a');
-      source.href=card.media.page;source.target='_blank';source.rel='noopener noreferrer';
-      source.textContent='View on GIPHY · '+card.media.title;
-      el('media').replaceChildren(frame,source);
+      const animation=new Image();
+      animation.alt=card.topic+' animation for '+n+' December';
+      animation.onerror=()=>animation.replaceWith('This animation is temporarily unavailable.');
+      animation.src='https://media.giphy.com/media/'+encodeURIComponent(card.media.id)+'/giphy.gif';
+      el('media').replaceChildren(animation);
     }
     el('card').hidden=false;
     el('notice').textContent='';
