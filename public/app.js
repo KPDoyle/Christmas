@@ -2,16 +2,19 @@ const el=id=>document.getElementById(id);
 const params=new URLSearchParams(location.hash.slice(1));
 const token=params.get('admin') || params.get('gift') || '';
 const headers={Authorization:'Bearer '+token};
-const marks=['✧','❄','✴','❅','✦'];
+const marks=['🎄','🕯️','🦌','🎁','🛷','🔔','🧦','🍪','⛄','🕊️'];
 let state={}, day=0, request=0, objectUrl;
 async function refresh(){
   const r=await fetch('/api/calendar',{headers});
   if(!r.ok) throw Error('The calendar could not load. Please refresh.');
   state=await r.json();
   if(state.guest){
+    el('editor').hidden=false;
+    el('topics').replaceChildren(...state.topics.map(t=>new Option(t.name,t.id)));
+    el('topics').value=state.topic;
     el('mode').textContent='CALENDAR ADMIN';
     el('share').hidden=false;
-    el('hint').textContent=(state.filled.length)+' of 25 photos ready. Choose a door to upload or replace its photo.';
+    el('hint').textContent=(state.filled.length)+' personal photos added. Preview any door or add a photo to its Christmas postcard.';
   }
   el('grid').replaceChildren();
   for(let n=1;n<=25;n++){
@@ -26,6 +29,7 @@ async function refresh(){
 }
 async function openDay(n){
   const current=++request;day=n;
+  el('card').hidden=true;
   if(objectUrl) URL.revokeObjectURL(objectUrl);
   el('date').textContent=n+' December';el('photo').hidden=true;el('upload').hidden=!state.guest;
   el('upload').querySelector('input').value='';
@@ -35,9 +39,22 @@ async function openDay(n){
     el('notice').textContent='This door opens on '+n+' December at midnight UK time.';return;
   }
   try{
+    const cardResponse=await fetch('/api/calendar?card=1&day='+n,{headers});
+    if(current!==request)return;
+    if(!cardResponse.ok){
+      el('notice').textContent=cardResponse.status===423?'This door opens on '+n+' December.':cardResponse.status===403?'Use the guest link from your sender to open this door.':'This postcard could not load. Please reopen the door.';
+      return;
+    }
+    const card=await cardResponse.json();
+    if(current!==request)return;
+    el('series').textContent=card.topic;
+    el('setup').textContent=card.setup;
+    el('punch').textContent=card.punchline;
+    el('card').hidden=false;
+    el('notice').textContent='';
     const r=await fetch('/api/calendar?day='+n,{headers});
     if(current!==request)return;
-    if(!r.ok){el('notice').textContent=r.status===404?'This door is waiting for its photo.':r.status===423?'This door opens on '+n+' December.':r.status===403?'Open the invitation link from your sender to view the photo.':'Could not load this photo. Please try again.';return}
+    if(!r.ok){el('notice').textContent=r.status===404?'':r.status===423?'This door opens on '+n+' December.':r.status===403?'Open the invitation link from your sender to view the photo.':'Could not load this photo. Please try again.';return}
     const blob=await r.blob();if(current!==request)return;
     objectUrl=URL.createObjectURL(blob);el('photo').src=objectUrl;el('photo').alt='Your photo for '+n+' December';el('photo').hidden=false;el('notice').textContent='';
   }catch{if(current===request)el('notice').textContent='Connection lost. Please try again.'}
@@ -66,3 +83,16 @@ input.onchange=async()=>{
   finally{URL.revokeObjectURL(src);input.disabled=false}
 };
 refresh().catch(e=>el('hint').textContent=e.message);
+
+el('topics').onchange=async e=>{
+  const select=e.currentTarget,topic=select.value;
+  select.disabled=true;
+  el('saved').textContent='Saving…';
+  try{
+    const r=await fetch('/api/calendar',{method:'PUT',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify({topic})});
+    if(!r.ok)throw Error();
+    state.topic=topic;
+    el('saved').textContent='Saved for all 25 doors';
+  }catch{select.value=state.topic;el('saved').textContent='Could not save. Please try again.'}
+  finally{select.disabled=false}
+};
