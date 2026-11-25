@@ -1,6 +1,8 @@
 const el=id=>document.getElementById(id);
 const params=new URLSearchParams(location.hash.slice(1));
-const token=params.get('admin') || params.get('gift') || params.get('test') || '';
+const recipient=params.get('calendar');
+const endpoint=recipient?'/api/recipients':'/api/calendar';
+const token=recipient||params.get('admin') || params.get('gift') || params.get('test') || '';
 const headers={Authorization:'Bearer '+token};
 const windows=[[8,12],[24,12],[38,13],[66,17],[76,17],[91,10],[6,25],[25,25],[38,26],[65,29],[75,29],[87,27],[95,27],[10,36],[21,36],[39,35],[66,43],[78,43],[9,62],[20,60],[27,62],[38,65],[76,56],[87,57],[94,63]];
 const marks=['🎄','🕯️','🦌','🎁','🛷','🔔','🧦','🍪','⛄','🕊️'];
@@ -8,7 +10,7 @@ let chosenTopic=params.get('topic') || '';
 const customTopics=new Map();
 let state={}, day=0, request=0, objectUrl;
 const role=params.has('admin')?'admin':params.has('test')?'preview':'guest';
-const progressKey='december-post:2026:'+role+':'+(params.get('topic')||'default');
+const progressKey='december-post:2026:'+role+':'+(recipient||params.get('topic')||'default');
 function readProgress(){
   try{return JSON.parse(localStorage.getItem(progressKey))||{}}catch{return {}}
 }
@@ -26,6 +28,9 @@ const street=document.querySelector('.street');
 for(const [index,variable] of ['--street','--market','--inn'].entries()){
   street.style.setProperty(variable,'url(/'+paintings[(visit+index)%3]+'.webp)');
 }
+function themeImage(name){
+  return ({'Victorian Christmas market':'market','Snowy coaching inn':'inn'})[name]||'carol';
+}
 function showOpened(button,n){
   button.classList.add('opened');
   button.setAttribute('aria-label',n+' December, opened. Revisit postcard');
@@ -33,9 +38,17 @@ function showOpened(button,n){
   button.style.setProperty('--crop',(12+(n*19)%76)+'% '+(24+(n*13)%56)+'%');
 }
 async function refresh(){
-  const r=await fetch('/api/calendar',{headers});
+  const r=await fetch(endpoint,{headers});
   if(!r.ok) throw Error('The calendar could not load. Please refresh.');
   state=await r.json();
+  if(recipient){
+    const theme=themeImage(state.background);
+    const start=paintings.indexOf(theme);
+    for(const [index,variable] of ['--street','--market','--inn'].entries()){
+      street.style.setProperty(variable,'url(/'+paintings[(start+visit+index)%3]+'.webp)');
+    }
+    street.dataset.theme=theme;
+  }
   if(state.preview){
     el('mode').textContent='TEST CALENDAR';
     el('hint').textContent='All 25 doors are open for testing.';
@@ -44,7 +57,7 @@ async function refresh(){
     state.topics.push(...customTopics.values());
     if(!state.topics.some(t=>t.id===chosenTopic)) chosenTopic=state.topic;
     el('testLink').href='/#test='+state.previewKey+'&topic='+encodeURIComponent(chosenTopic);
-    el('editor').hidden=false;
+    el('editor').hidden=true;
     el('topics').replaceChildren(...state.topics.map(t=>new Option(t.name,t.id)));
     el('topics').value=chosenTopic;
     el('mode').textContent='CALENDAR ADMIN';
@@ -79,7 +92,7 @@ async function openDay(n){
   }
   try{
     const query=new URLSearchParams({card:'1',day:n,topic:chosenTopic});
-    const cardResponse=await fetch('/api/calendar?'+query,{headers});
+    const cardResponse=await fetch(endpoint+'?'+query,{headers});
     if(current!==request)return;
     if(!cardResponse.ok){
       el('notice').textContent=cardResponse.status===423?'This door opens on '+n+' December.':cardResponse.status===403?'Use the guest link from your sender to open this door.':'This postcard could not load. Please reopen the door.';
@@ -88,6 +101,7 @@ async function openDay(n){
     const card=await cardResponse.json();
     if(current!==request)return;
     opened.add(n);saveProgress();showOpened(el('door-'+n),n);
+    if(card.background)el('card').style.setProperty('--postcard-art','url(/'+themeImage(card.background)+'.webp)');
     el('series').textContent=card.topic;
     if(card.media){
       const animation=new Image();
@@ -98,7 +112,7 @@ async function openDay(n){
     }
     el('card').hidden=false;
     el('notice').textContent='';
-    const r=await fetch('/api/calendar?day='+n,{headers});
+    const r=await fetch(endpoint+'?day='+n,{headers});
     if(current!==request)return;
     if(!r.ok){el('notice').textContent=r.status===404?'':r.status===423?'This door opens on '+n+' December.':r.status===403?'Open the invitation link from your sender to view the photo.':'Could not load this photo. Please try again.';return}
     const blob=await r.blob();if(current!==request)return;
