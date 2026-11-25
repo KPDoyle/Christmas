@@ -26,17 +26,17 @@ function categories(value){
 async function populate(doors,indexes){
   const groups=new Map();
   for(const i of indexes){
-    const d=doors[i],key=d.category+' '+d.style;
+    const d=doors[i],key=JSON.stringify([d.category,d.style]);
     if(!groups.has(key))groups.set(key,[]);
     groups.get(key).push(i);
   }
   const used=new Set(doors.filter((_,i)=>!indexes.includes(i)).map(d=>d.media?.id));
-  await Promise.all([...groups].map(async ([term,slots])=>{
+  await Promise.all([...groups].map(async ([,slots])=>{
     const first=doors[slots[0]];
     const found=await findGifs(first.category,{style:first.style,needed:25,exclude:used});
     for(const i of slots){
       const clip=found.find(m=>!used.has(m.id));
-      if(!clip)throw bad('Too few distinct results for “'+term+'”. Try a broader category or another style.');
+      if(!clip)throw bad('Too few distinct results for the category “'+first.category+'”. Try a broader interest.');
       doors[i].media=clip;used.add(clip.id);
     }
   }));
