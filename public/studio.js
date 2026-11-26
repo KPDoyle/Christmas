@@ -93,6 +93,12 @@ function door(){
   el('miniPreview').replaceChildren(image);
 }
 function display(c){
+  const backgroundsMenu=el('calBg');
+  backgroundsMenu.querySelector('option[data-legacy]')?.remove();
+  if(c && !Array.from(backgroundsMenu.options).some(o=>o.value===c.background)){
+    const legacy=new Option(c.background+' (previous selection)',c.background);
+    legacy.hidden=true;legacy.dataset.legacy='true';backgroundsMenu.add(legacy);
+  }
   if(!c||current?.id!==c.id)drafts.clear();
   updateDraftStatus();
   for(const field of ['recipientName','senderName','dedication'])el(field).value=c?.[field]||'';
@@ -174,7 +180,7 @@ el('recipientPhoto').onchange=e=>{const file=e.target.files[0];if(!file)return;e
 })};
 api().then(async data=>{
   studio.hidden=false;
-  opts(el('calStyle'),data.styles);opts(el('doorStyle'),data.styles);opts(el('calBg'),data.backgrounds);opts(el('doorBg'),data.backgrounds);
+  opts(el('calStyle'),data.styles);opts(el('doorStyle'),data.styles);opts(el('calBg'),data.calendarBackgrounds||data.backgrounds);opts(el('doorBg'),data.backgrounds);
   el('doorBg').add(new Option('Use calendar background',''),0);
   for(let i=1;i<=25;i++)el('editDay').add(new Option(i+' December',String(i)));
   for(const c of data.calendars)el('library').add(new Option(c.email+' · '+c.id.slice(-6),c.id));

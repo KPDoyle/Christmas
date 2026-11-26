@@ -4,7 +4,7 @@ import {randomBytes,createHmac} from 'node:crypto';
 import {findGifs,chooseDoorMedia} from '../lib/discovery.js';
 
 const styles=['Traditional','Humorous','Heartwarming','Playful','Scenic'];
-import {backgrounds} from '../lib/backgrounds.js';
+import {backgrounds,calendarBackgrounds} from '../lib/backgrounds.js';
 import {accountSession} from '../lib/owner/session.js';
 const prefix='recipient-calendars/';
 const pathFor=id=>prefix+id+'.json';
@@ -70,7 +70,7 @@ export default async function handler(req,res){
         calendars.push(...items.filter(owns).map(c=>({id:c.id,email:c.email})));
         cursor=batch.hasMore?batch.cursor:null;
       }while(cursor);
-      return res.json({calendars,styles,backgrounds});
+      return res.json({calendars,styles,backgrounds,calendarBackgrounds});
     }
     const c=id?await read(pathFor(id)):null;
     if(admin&&c&&!owns(c))return res.status(404).send('Calendar not found.');
