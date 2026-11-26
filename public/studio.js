@@ -117,6 +117,10 @@ function door(){
   if(!current)return;
   activeDay=Number(el('editDay').value);
   const d=current.doors[activeDay-1];
+  const topics=el('animationTopic');
+  const choices=new Set([d.category,...(current.interests||[]),'Christmas','Animals','Boats','Gardening','Minions','Music','Sport','Travel']);
+  topics.replaceChildren(...Array.from(choices,topic=>new Option(topic,topic)),new Option('Enter a topic…',''));
+  topics.value=d.category;
   loadPhoto(current.id,activeDay);
   el('dayNote').value=d.note||'';
   if(drafts.has(activeDay))applyValues(windowFields,drafts.get(activeDay));
@@ -205,17 +209,32 @@ el('recipientForm').onsubmit=e=>{e.preventDefault();work(async()=>{
   status.textContent='Calendar saved. Your private invitation is ready.';
 })};
 el('editDay').onchange=door;
-el('doorForm').onsubmit=e=>{e.preventDefault();work(async()=>{
-  const {category,style,background}=current.doors[activeDay-1];
-  const data={note:el('dayNote').value,category,style,background,replace:e.submitter?.id==='replaceGif',version:current.version};
-  if(data.replace)status.textContent='Searching for a different animation…';
-  const pendingCalendar=calendarChanged()?values(calendarFields):null;
-  const saved=await api(current.id,post(data),activeDay);
-  if(data.replace)updatePhotoTile(activeDay,mediaUrl(saved.doors[activeDay-1].media));
-  drafts.delete(activeDay);display(saved);
-  if(pendingCalendar){applyValues(calendarFields,pendingCalendar);previewArt()}
- status.textContent=data.replace?'New animation saved to this window.':'Window saved to the existing invitation.';
-})};
+function saveWindow(category,replace,topicChange=false){
+  return work(async()=>{
+    const door=current.doors[activeDay-1];
+    const data={note:topicChange?door.note:el('dayNote').value,category,style:door.style,background:door.background,replace,version:current.version};
+    if(data.replace)status.textContent='Searching for a different animation…';
+    const pendingCalendar=calendarChanged()?values(calendarFields):null;
+    const saved=await api(current.id,post(data),activeDay);
+    if(data.replace)updatePhotoTile(activeDay,mediaUrl(saved.doors[activeDay-1].media));
+    if(!topicChange)drafts.delete(activeDay);
+    display(saved);
+    if(pendingCalendar){applyValues(calendarFields,pendingCalendar);previewArt()}
+    status.textContent=data.replace?'New animation saved to this window.':'Window saved to the existing invitation.';
+  });
+}
+el('doorForm').onsubmit=e=>{
+  e.preventDefault();
+  saveWindow(current.doors[activeDay-1].category,e.submitter?.id==='replaceGif');
+};
+el('animationTopic').onchange=async event=>{
+  const selector=event.target;
+  const previous=current.doors[activeDay-1].category;
+  const topic=selector.value||prompt('Enter an animation topic for this window')?.trim();
+  if(!topic||topic===previous){selector.value=previous;return}
+  await saveWindow(topic,true,true);
+  selector.value=current.doors[activeDay-1].category;
+};
 el('copyInvite').onclick=async()=>{try{await navigator.clipboard.writeText(el('inviteUrl').value);status.textContent='Invitation copied.'}catch{el('inviteUrl').select();status.textContent='Copy the selected invitation.'}};
 el('recipientPhoto').onchange=e=>{const file=e.target.files[0];if(!file)return;++photoRequest;showPhoto(file);el('recipientFilename').textContent='Uploading '+file.name+'…';work(async()=>{
   const src=URL.createObjectURL(file);
