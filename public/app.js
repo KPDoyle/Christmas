@@ -65,9 +65,7 @@ function saveProgress(){
 }
 const paintings=["scenes/village-christmas-carollers","scenes/victorian-christmas-by-the-fireside","scenes/christmas-eve-in-london"];
 const street=document.querySelector('.street');
-for(const [index,variable] of ['--street','--market','--inn'].entries()){
-  street.style.setProperty(variable,'url(/'+paintings[(visit+index)%3]+'.webp)');
-}
+street.style.setProperty('--street','url(/'+paintings[0]+'.webp)');
 function themeImage(name){
   return ({'Dickensian London':'carol','Victorian Christmas market':'market','Snowy coaching inn':'inn'})[name] || (name?'scenes/'+name.toLowerCase().replace(/[^a-z0-9]+/g,'-'):'carol');
 }
@@ -109,12 +107,7 @@ async function refresh(){
   showGift();
   if(recipient){
     const theme=themeImage(state.background);
-    const catalog=(state.backgrounds||[]).map(themeImage);
-    const start=Math.max(0,catalog.indexOf(theme));
-    const trio=catalog.length?Array.from({length:3},(_,i)=>catalog[(start+i)%catalog.length]):paintings;
-    for(const [index,variable] of ['--street','--market','--inn'].entries()){
-      street.style.setProperty(variable,'url(/'+trio[(visit+index)%3]+'.webp)');
-    }
+    street.style.setProperty('--street','url(/'+theme+'.webp)');
     street.dataset.theme=theme;
   }
   if(state.preview){
@@ -245,7 +238,6 @@ async function startCalendar(){
     window.addEventListener('pageshow',event=>{if(event.persisted)location.reload()});
   }
   restoreProgress();
-  for(const [i,v] of ['--street','--market','--inn'].entries())street.style.setProperty(v,'url(/'+paintings[(visit+i)%3]+'.webp)');
   await refresh();
 }
 startCalendar().catch(e=>{el('hint').hidden=false;el('hint').textContent=e.message});
