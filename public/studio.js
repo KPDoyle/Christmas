@@ -141,15 +141,10 @@ el('deleteCalendar').onclick=()=>{
   work(async()=>{
     await api(selected.id,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({version:selected.version})});
     Array.from(el('library').options).find(option=>option.value===selected.id)?.remove();
-    display(null);el('lookupUrl').value='';el('recipientEmail').focus();
+    display(null);el('recipientEmail').focus();
     status.textContent='Calendar deleted for '+selected.email+'.';
   });
 };
-el('lookup').onsubmit=e=>{e.preventDefault();work(async()=>{
-  const u=new URL(el('lookupUrl').value);const id=new URLSearchParams(u.hash.slice(1)).get('calendar')?.split('.')[0];
-  if(!id||!/^[a-f0-9]{32}$/.test(id))throw Error('Paste a recipient invitation created in this studio.');
-  await open(id);
-})};
 el('recipientForm').onsubmit=e=>{e.preventDefault();work(async()=>{
   status.textContent='Finding content and preparing the calendar…';
   const data={recipientName:el('recipientName').value,senderName:el('senderName').value,dedication:el('dedication').value,email:el('recipientEmail').value,interests:parseInterests(el('categories').value),style:el('calStyle').value,background:el('calBg').value,version:current?.version};
