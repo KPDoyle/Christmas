@@ -154,7 +154,7 @@ async function openDay(n){
   if(demo||(role==='admin'&&!state.guest&&!selectedId)){
     const [scene,note]=demo?(samples[n-1]||[sampleScenes[(n-4)%sampleScenes.length],'']):[sampleScenes[(n-1)%sampleScenes.length],''];
     const img=new Image();img.src='/'+themeImage(scene)+'.webp';img.alt=scene;
-    el('series').textContent=scene;el('media').replaceChildren(img);
+    el('media').replaceChildren(img);
     el('postNote').textContent=note;el('postNote').hidden=false;el('card').hidden=false;el('notice').textContent='';
     opened.add(n);saveProgress();showOpened(el('door-'+n),n);return;
   }
@@ -172,7 +172,6 @@ async function openDay(n){
     opened.add(n);saveProgress();showOpened(el('door-'+n),n);
     el('postNote').textContent=card.note||'';el('postNote').hidden=!card.note;
     if(card.background)el('card').style.setProperty('--postcard-art','url(/'+themeImage(card.background)+'.webp)');
-    el('series').textContent=card.topic;
     const photoQuery=new URLSearchParams({day:n});
     if(selectedId)photoQuery.set('id',selectedId);
     const r=await fetch(doorEndpoint+'?'+photoQuery,{headers,cache:'no-store'});
