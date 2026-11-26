@@ -31,12 +31,21 @@ function door(){
 }
 function display(c){
   el('deleteCalendar').hidden=!c;
-  current=c;el('recipientEmail').value=c?.email||'';el('categories').value=c?.interests.join(', ')||'';
+  current=c;el('recipientEmail').value=c?.email||'';el('categories').value=c?.interests.join('\n')||'';
   el('calStyle').selectedIndex=0;el('calBg').selectedIndex=0;
   el('delivery').hidden=!c;el('library').value=c?.id||'';
   el('build').textContent=c?'Save calendar changes':'Find content and create calendar';
   if(!c){previewArt();return;}
   el('calStyle').value=c.style;el('calBg').value=c.background;
+  el('matchGrid').replaceChildren(...c.doors.map((d,i)=>{
+    const tile=document.createElement('button');tile.type='button';tile.className='matchTile';
+    const image=new Image();image.loading='lazy';image.alt='';image.src='https://media.giphy.com/media/'+encodeURIComponent(d.media.id)+'/200w_s.gif';
+    const name=document.createElement('span');name.textContent=(i+1)+' Dec · '+d.category;
+    tile.append(image,name);
+    if(d.media.matched?.length){const tags=document.createElement('small');tags.textContent='Matched: '+d.media.matched.join(', ');tile.append(tags)}
+    tile.onclick=()=>{el('editDay').value=String(i+1);door();el('doorInterest').focus()};
+    return tile;
+  }));
   const url=location.origin+'/#calendar='+c.invite;
   el('inviteUrl').value=url;el('previewInvite').href='/#calendar='+c.test;
   el('mailInvite').href='mailto:'+encodeURIComponent(c.email)+'?subject='+encodeURIComponent('Your Christmas advent calendar')+'&body='+encodeURIComponent('A little Christmas surprise for you. Open a window each day in December.\n\n'+url);
@@ -73,7 +82,7 @@ el('lookup').onsubmit=e=>{e.preventDefault();work(async()=>{
 })};
 el('recipientForm').onsubmit=e=>{e.preventDefault();work(async()=>{
   status.textContent='Finding content and preparing the calendar…';
-  const data={email:el('recipientEmail').value,interests:el('categories').value.split(',').map(s=>s.trim()).filter(Boolean),style:el('calStyle').value,background:el('calBg').value,version:current?.version};
+  const data={email:el('recipientEmail').value,interests:el('categories').value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean),style:el('calStyle').value,background:el('calBg').value,version:current?.version};
   display(await api(current?.id,post(data)));status.textContent='Calendar saved. Your private invitation is ready.';
 })};
 el('editDay').onchange=door;

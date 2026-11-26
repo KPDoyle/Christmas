@@ -20,7 +20,7 @@ function requireChoice(value,options){
   return value;
 }
 function categories(value){
-  if(!Array.isArray(value)||!value.length||value.length>8||value.some(s=>typeof s!=='string'||!s.trim()||s.length>60))throw bad('Enter one to eight interests, up to 60 characters each.');
+  if(!Array.isArray(value)||!value.length||value.length>8||value.some(s=>typeof s!=='string'||!s.trim()||s.length>200))throw bad('Enter one to eight interests, up to 200 characters each.');
   return [...new Set(value.map(s=>s.trim()))];
 }
 async function populate(doors,indexes){
