@@ -53,3 +53,5 @@ header nav{display:flex;align-items:center;gap:16px}
 @media(prefers-reduced-motion:reduce){:is(#studio,#editor) button:active,#adminHome:active{translate:none}}
 
 #studioLogout{min-height:44px;border:1px solid #c4a36b;border-radius:24px;padding:6px 16px;color:#fff0d4;background:#203b55;font:600 15px Georgia,serif;cursor:pointer}#studioLogout:active{transform:translateY(2px)}
+
+#studio .photoPicker{grid-column:1/-1;width:100%}#upload{width:100%;text-align:left}#studio #recipientPhoto,#upload input{box-sizing:border-box;width:100%;min-width:0;min-height:48px;height:auto;font:16px/1.5 system-ui,sans-serif;padding:6px}input[type=file]::file-selector-button{font:inherit;padding:6px 12px;margin-right:10px}.fileName{display:block;max-width:100%;overflow-wrap:anywhere;font:15px/1.5 system-ui,sans-serif}.fileName:empty{display:none}

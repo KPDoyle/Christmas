@@ -163,7 +163,7 @@ async function refresh(){
   }
 }
 async function openDay(n){
-  const current=++request;day=n;el('postNote').hidden=true;
+  const current=++request;day=n;el('uploadFilename').textContent='';el('postNote').hidden=true;
   el('card').hidden=true;el('media').replaceChildren();
   if(objectUrl) URL.revokeObjectURL(objectUrl);
   el('date').textContent=n+' December';el('photo').hidden=true;el('upload').hidden=!state.guest;
@@ -216,6 +216,7 @@ el('share').onclick=async()=>{
 const input=el('upload').querySelector('input');
 input.onchange=async()=>{
   const file=input.files[0],selected=day;
+  el('uploadFilename').textContent=file?.name||'';
   if(!file)return;
   input.disabled=true;el('notice').textContent='Saving photo…';
   let src=URL.createObjectURL(file);

@@ -60,6 +60,7 @@ function previewArt(){
 el('calBg').addEventListener('change',previewArt);
 el('doorBg').addEventListener('change',previewArt);
 function door(){
+  el('recipientFilename').textContent='';
   if(!current)return;
   const d=current.doors[Number(el('editDay').value)-1];
   el('dayNote').value=d.note||'';
@@ -134,7 +135,7 @@ el('doorForm').onsubmit=e=>{e.preventDefault();work(async()=>{
   display(await api(current.id,post(data),el('editDay').value));status.textContent=data.replace?'New animation saved to this window.':'Window saved to the existing invitation.';
 })};
 el('copyInvite').onclick=async()=>{try{await navigator.clipboard.writeText(el('inviteUrl').value);status.textContent='Invitation copied.'}catch{el('inviteUrl').select();status.textContent='Copy the selected invitation.'}};
-el('recipientPhoto').onchange=e=>{const file=e.target.files[0];if(!file)return;work(async()=>{
+el('recipientPhoto').onchange=e=>{const file=e.target.files[0];if(!file)return;el('recipientFilename').textContent=file.name;work(async()=>{
   const src=URL.createObjectURL(file);
   try{const img=new Image();img.src=src;await img.decode();const scale=Math.min(1,1600/Math.max(img.width,img.height));
     const cv=document.createElement('canvas');cv.width=Math.max(1,Math.round(img.width*scale));cv.height=Math.max(1,Math.round(img.height*scale));
