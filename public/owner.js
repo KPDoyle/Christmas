@@ -40,16 +40,16 @@ async function load(){
   if(s.loggedIn){$('ownerEmail').textContent=s.email;$('senderSettings').hidden=!s.sender;if(s.sender)renderSender(s.sender);show('dashboard','Account settings');return}
   $('ownerSetup').hidden=!s.setupRequired;
   if(hash.has('signup')){show('signupForm','Create your organiser account');return}
-  show('loginForm','Organiser sign-in');
+  show('loginForm','Calendar Creator Sign-in');
 }
 
 $('ownerSetup').onclick=()=>show('setupForm','Set up the owner account');
 $('signupLink').onclick=()=>show('signupForm','Create your organiser account');
-$('signupBack').onclick=()=>show('loginForm','Organiser sign-in');
+$('signupBack').onclick=()=>show('loginForm','Calendar Creator Sign-in');
 $('signupForm').onsubmit=busy($('signupForm'),async()=>{await call('signup',{email:$('signupEmail').value,password:$('signupPassword').value});location.assign('/#admin=session')});
 $('loginForm').onsubmit=busy($('loginForm'),async()=>{await call('login',{email:$('loginEmail').value,password:$('loginPassword').value});say('');$('loginPassword').value='';await load()});
 $('showForgot').onclick=()=>{say('');$('forgotEmail').value=$('loginEmail').value;show('forgotForm','Reset your password')};
-$('backToLogin').onclick=()=>{say('');show('loginForm','Organiser sign-in')};
+$('backToLogin').onclick=()=>{say('');show('loginForm','Calendar Creator Sign-in')};
 $('forgotForm').onsubmit=busy($('forgotForm'),async()=>{const r=await call('forgot',{email:$('forgotEmail').value});say(r.message,'ok')});
 $('resetForm').onsubmit=busy($('resetForm'),async()=>{
   if($('resetPassword').value!==$('resetConfirm').value)throw Error('The passwords do not match.');
