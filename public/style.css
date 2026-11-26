@@ -51,3 +51,5 @@ header nav{display:flex;align-items:center;gap:16px}
 @media(min-width:881px){.street{min-height:440px}}
 :is(#studio,#editor) button:active,#adminHome:active{translate:0 2px;filter:brightness(.88)}
 @media(prefers-reduced-motion:reduce){:is(#studio,#editor) button:active,#adminHome:active{translate:none}}
+
+#studioLogout{min-height:44px;border:1px solid #c4a36b;border-radius:24px;padding:6px 16px;color:#fff0d4;background:#203b55;font:600 15px Georgia,serif;cursor:pointer}#studioLogout:active{transform:translateY(2px)}

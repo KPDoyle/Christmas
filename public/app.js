@@ -2,7 +2,7 @@ const el=id=>document.getElementById(id);
 const params=new URLSearchParams(location.hash.slice(1));
 const shareOrigin=location.hostname==='december-post-kevindoyle.vercel.app'?'https://calendar-post-kevindoyle.vercel.app':location.origin;
 if(params.has('admin') && params.get('admin')!=='session')location.replace('/owner.html');
-if(params.get('admin')==='session')fetch('/api/owner?action=status').then(r=>r.json()).then(s=>{if(!s.loggedIn)location.replace('/owner.html')});
+
 const recipient=params.get('calendar');
 const endpoint=recipient?'/api/recipients':'/api/calendar';
 const token=recipient||params.get('admin') || params.get('gift') || params.get('test') || '';
@@ -46,19 +46,23 @@ let chosenTopic=params.get('topic') || '';
 const customTopics=new Map();
 let state={}, day=0, request=0, objectUrl;
 const role=params.has('admin')?'admin':params.has('test')?'preview':'guest';
-const progressKey='december-post:2026:'+role+':'+(demo?'public-sample-'+sampleTheme:recipient||params.get('topic')||'default');
+let progressKey='december-post:2026:'+role+':'+(demo?'public-sample-'+sampleTheme:recipient||params.get('topic')||'default');
 function readProgress(){
   try{return JSON.parse(localStorage.getItem(progressKey))||{}}catch{return {}}
 }
+let visit=0;
+const opened=new Set();
+function restoreProgress(){
 const previous=readProgress();
-const opened=new Set(Array.isArray(previous.days)?previous.days:[]);
-const visit=opened.size?(Number(previous.visit)||0)+1:0;
+opened.clear();for(const n of previous.days||[])opened.add(n);
+visit=opened.size?(Number(previous.visit)||0)+1:0;
+if(opened.size)saveProgress();
+}
 function saveProgress(){
   const latest=readProgress();
   for(const n of latest.days||[])opened.add(n);
   try{localStorage.setItem(progressKey,JSON.stringify({days:[...opened],visit:Math.max(visit,Number(latest.visit)||0)}))}catch{}
 }
-if(opened.size)saveProgress();
 const paintings=['carol','market','inn'];
 const street=document.querySelector('.street');
 for(const [index,variable] of ['--street','--market','--inn'].entries()){
@@ -165,8 +169,8 @@ async function openDay(n){
   el('upload').querySelector('input').value='';
   if(!el('popup').open)el('popup').showModal();
   el('notice').textContent='Opening your door…';
-  if(demo){
-    const [scene,note]=samples[n-1]||[sampleScenes[(n-4)%sampleScenes.length],''];
+  if(demo||(role==='admin'&&!state.guest)){
+    const [scene,note]=demo?(samples[n-1]||[sampleScenes[(n-4)%sampleScenes.length],'']):[sampleScenes[(n-1)%sampleScenes.length],''];
     const img=new Image();img.src='/'+themeImage(scene)+'.webp';img.alt=scene;
     el('series').textContent=scene;el('media').replaceChildren(img);
     el('postNote').textContent=note;el('postNote').hidden=false;el('card').hidden=false;el('notice').textContent='';
@@ -235,7 +239,28 @@ function showAdminHome(){
   home.onclick=()=>{location.hash=adminHash;location.reload()};
 }
 showAdminHome();
-refresh().catch(e=>el('hint').textContent=e.message);
+async function startCalendar(){
+  if(role==='admin'){
+    const r=await fetch('/api/owner?action=status',{cache:'no-store'});
+    const account=await r.json();
+    if(!account.loggedIn||!account.email){location.replace('/owner.html');return}
+    progressKey+=':organiser:'+account.email;
+    const logout=el('studioLogout');logout.hidden=false;
+    logout.onclick=async()=>{
+      logout.disabled=true;
+      try{
+        const response=await fetch('/api/owner?action=logout',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+        if(!response.ok)throw Error();
+        sessionStorage.removeItem('calendarAdminHome');location.replace('/owner.html');
+      }catch{logout.disabled=false;el('studioStatus').textContent='Could not log out. Please try again.'}
+    };
+    window.addEventListener('pageshow',event=>{if(event.persisted)location.reload()});
+  }
+  restoreProgress();
+  for(const [i,v] of ['--street','--market','--inn'].entries())street.style.setProperty(v,'url(/'+paintings[(visit+i)%3]+'.webp)');
+  await refresh();
+}
+startCalendar().catch(e=>el('hint').textContent=e.message);
 
 el('topics').onchange=e=>{
   chosenTopic=e.currentTarget.value;
