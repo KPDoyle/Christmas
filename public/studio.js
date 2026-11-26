@@ -15,7 +15,7 @@ fetch('/api/owner?action=status',{credentials:'same-origin'}).then(r=>r.ok?r.jso
   let warn=false;
   if(params.get('admin')==='session'&&!s.loggedIn){note.append('Your owner session has ended. ',link('Sign in again'));warn=true}
   else if(s.setupRequired){note.append('No owner login yet. ',link('Set your owner password'));warn=true}
-  else if(s.loggedIn&&!s.sender?.connected){note.append('Password-reset emails cannot be sent: the Microsoft 365 sender is not connected. ',link('Connect it in owner settings'));warn=true}
+  else if(s.loggedIn&&s.sender&&!s.sender.connected){note.append('Password-reset emails cannot be sent: the Microsoft 365 sender is not connected. ',link('Connect it in owner settings'));warn=true}
   else note.append(link(s.loggedIn?'Owner settings':'Owner sign-in'));
   if(warn)note.style.cssText='background:#fff3cd;color:#5a4300;border:1px solid #c79100;padding:.6rem;border-radius:.3rem';
   studio.prepend(note);

@@ -2,12 +2,12 @@ import { waitUntil } from '@vercel/functions';
 import { config } from '../lib/owner/config.js';
 import { safeEqual, encrypt } from '../lib/owner/crypto.js';
 import { getAccount, createAccount, checkLogin, setPassword, issueResetToken, consumeResetToken } from '../lib/owner/account.js';
-import { ownerSession, createSessionCookie, clearSessionCookie, appendCookie, cookie, OAUTH_COOKIE } from '../lib/owner/session.js';
+import { accountSession, ownerSession, createSessionCookie, clearSessionCookie, appendCookie, cookie, OAUTH_COOKIE } from '../lib/owner/session.js';
 import { check, clientIp } from '../lib/owner/ratelimit.js';
 import { startAuthorization, senderStatus, disconnectSender } from '../lib/owner/graph.js';
 import { sendResetEmail, sendTestEmail } from '../lib/owner/mail.js';
 
-const RESET_MESSAGE = 'If that email belongs to the calendar owner, a reset link is on its way. It expires in 30 minutes.';
+const RESET_MESSAGE = 'If that email has a calendar account, a reset link is on its way. It expires in 30 minutes.';
 const LOGIN_FAILED = 'Email or password is incorrect.';
 
 function tooMany(res, result) {
@@ -30,12 +30,12 @@ export default async function handler(req, res) {
   const body = req.body && typeof req.body === 'object' ? req.body : {};
   try {
     if (req.method === 'GET' && action === 'status') {
-      const session = await ownerSession(req);
+      const session = await accountSession(req);
       const account = session?.account || await getAccount();
       const out = { setupRequired: !account, loggedIn: Boolean(session) };
       if (session) {
         out.email = session.account.email;
-        out.sender = await senderStatus();
+        if(session.account.email===config().ownerEmail)out.sender = await senderStatus();
       }
       return res.json(out);
     }
@@ -51,6 +51,16 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).end();
     if (!sameOriginJson(req)) return res.status(400).send('Send JSON from the calendar site.');
 
+    if(action==='signup'){
+      const limit=await check([['signup:ip:'+ip,8,3600]]);
+      if(!limit.allowed)return tooMany(res,limit);
+      const email=String(body.email||'').trim().toLowerCase();
+      if(email.length>254||!/^\S+@[^@\s]+\.[^@\s]+$/.test(email))return res.status(400).send('Enter a valid email address.');
+      if(email===config().ownerEmail||await getAccount(email))return res.status(409).send('Use another email or sign in.');
+      const account=await createAccount(body.password,email);
+      appendCookie(res,createSessionCookie(account));
+      return res.json({ok:true});
+    }
     if (action === 'setup') {
       const limit = await check([['setup:ip:' + ip, 5, 900]]);
       if (!limit.allowed) return tooMany(res, limit);
@@ -81,7 +91,7 @@ export default async function handler(req, res) {
       const email = String(body.email || '').trim().toLowerCase();
       const limit = await check([['forgot:ip:' + ip, 5, 3600], ['forgot:global', 10, 3600]]);
       if (!limit.allowed) return tooMany(res, limit);
-      const account = await getAccount();
+      const account = await getAccount(email);
       if (account && email === account.email) {
         // Send after responding, so timing is the same whether or not the email matched.
         const work = issueResetToken(account).then(token => sendResetEmail(account.email, token))
@@ -100,7 +110,7 @@ export default async function handler(req, res) {
       return res.json({ ok: true });
     }
 
-    const session = await ownerSession(req);
+    const session = await accountSession(req);
     if (!session) return res.status(401).send('Sign in first.');
 
     if (action === 'change-password') {
@@ -112,6 +122,7 @@ export default async function handler(req, res) {
       return res.json({ ok: true });
     }
 
+    if(session.account.email!==config().ownerEmail)return res.status(403).end();
     if (action === 'ms-disconnect') {
       await disconnectSender();
       return res.json({ ok: true });

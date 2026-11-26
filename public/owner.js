@@ -1,6 +1,6 @@
 (()=>{
 const $=id=>document.getElementById(id);
-const forms=['loginForm','forgotForm','resetForm','setupForm','dashboard'];
+const forms=['signupForm','loginForm','forgotForm','resetForm','setupForm','dashboard'];
 const show=(id,title)=>{for(const f of forms)$(f).hidden=f!==id;if(title)$('title').textContent=title};
 const say=(text,tone)=>{const m=$('message');m.textContent=text||'';m.className=tone||''};
 const hash=new URLSearchParams(location.hash.slice(1));
@@ -37,14 +37,19 @@ async function load(){
   if(resetToken){show('resetForm','Reset your password');return}
   const r=await fetch('/api/owner?action=status',{credentials:'same-origin'});
   const s=await r.json();
-  if(s.loggedIn){$('ownerEmail').textContent=s.email;renderSender(s.sender);show('dashboard','Owner settings');return}
-  if(s.setupRequired){show('setupForm','Set up the owner account');return}
-  show('loginForm','Owner sign-in');
+  if(s.loggedIn){$('ownerEmail').textContent=s.email;$('senderSettings').hidden=!s.sender;if(s.sender)renderSender(s.sender);show('dashboard','Account settings');return}
+  $('ownerSetup').hidden=!s.setupRequired;
+  if(hash.has('signup')){show('signupForm','Create your organiser account');return}
+  show('loginForm','Organiser sign-in');
 }
 
+$('ownerSetup').onclick=()=>show('setupForm','Set up the owner account');
+$('signupLink').onclick=()=>show('signupForm','Create your organiser account');
+$('signupBack').onclick=()=>show('loginForm','Organiser sign-in');
+$('signupForm').onsubmit=busy($('signupForm'),async()=>{await call('signup',{email:$('signupEmail').value,password:$('signupPassword').value});location.assign('/#admin=session')});
 $('loginForm').onsubmit=busy($('loginForm'),async()=>{await call('login',{email:$('loginEmail').value,password:$('loginPassword').value});say('');$('loginPassword').value='';await load()});
 $('showForgot').onclick=()=>{say('');$('forgotEmail').value=$('loginEmail').value;show('forgotForm','Reset your password')};
-$('backToLogin').onclick=()=>{say('');show('loginForm','Owner sign-in')};
+$('backToLogin').onclick=()=>{say('');show('loginForm','Organiser sign-in')};
 $('forgotForm').onsubmit=busy($('forgotForm'),async()=>{const r=await call('forgot',{email:$('forgotEmail').value});say(r.message,'ok')});
 $('resetForm').onsubmit=busy($('resetForm'),async()=>{
   if($('resetPassword').value!==$('resetConfirm').value)throw Error('The passwords do not match.');

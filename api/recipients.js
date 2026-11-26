@@ -1,10 +1,11 @@
+import {config} from '../lib/owner/config.js';
 import {get,put,list,del} from '@vercel/blob';
 import {randomBytes,createHmac} from 'node:crypto';
 import {findGifs,chooseDoorMedia} from '../lib/discovery.js';
 
 const styles=['Traditional','Humorous','Heartwarming','Playful','Scenic'];
 import {backgrounds} from '../lib/backgrounds.js';
-import {isAdmin} from '../lib/owner/session.js';
+import {accountSession} from '../lib/owner/session.js';
 const prefix='recipient-calendars/';
 const pathFor=id=>prefix+id+'.json';
 const signature=(id,role)=>createHmac('sha256',process.env.CALENDAR_KEY).update(role+'/'+id).digest('base64url');
@@ -51,7 +52,9 @@ export default async function handler(req,res){
   res.setHeader('Cache-Control','private, no-store');
   if(!process.env.CALENDAR_KEY)return res.status(503).end();
   const auth=req.headers.authorization?.replace(/^Bearer /,'')||'';
-  const admin=await isAdmin(req,auth);
+  const session=auth==='session'?await accountSession(req):null;
+  const admin=Boolean(session);
+  const owns=c=>c&&(c.organiser||config().ownerEmail)===session?.account.email;
   const [linkId,sig]=auth.split('.');
   const id=admin?req.query.id:linkId;
   const validId=typeof id==='string'&&/^[a-f0-9]{32}$/.test(id);
@@ -64,12 +67,13 @@ export default async function handler(req,res){
       do{
         const batch=await list({prefix,limit:100,cursor});
         const items=await Promise.all(batch.blobs.map(b=>read(b.pathname)));
-        calendars.push(...items.filter(Boolean).map(c=>({id:c.id,email:c.email})));
+        calendars.push(...items.filter(owns).map(c=>({id:c.id,email:c.email})));
         cursor=batch.hasMore?batch.cursor:null;
       }while(cursor);
       return res.json({calendars,styles,backgrounds});
     }
     const c=id?await read(pathFor(id)):null;
+    if(admin&&c&&!owns(c))return res.status(404).send('Calendar not found.');
     if(req.method==='DELETE'){
       if(!admin)return res.status(403).end();
       if(!validId||req.query.day)throw bad('Select a saved calendar.');
@@ -136,6 +140,7 @@ export default async function handler(req,res){
       await populate(doors,indexes);
       next={id:c?.id||randomBytes(16).toString('hex'),email,interests,style,background,doors,recipientName:personalText(input.recipientName??c?.recipientName,60),senderName:personalText(input.senderName??c?.senderName,60),dedication:personalText(input.dedication??c?.dedication,400)};
     }
+    next.organiser=session.account.email;
     next.version=randomBytes(12).toString('hex');
     // Detect an intervening edit while online search was running.
     if(c&&(await read(pathFor(id)))?.version!==c.version)return res.status(409).send('Calendar changed. Reopen it before saving.');

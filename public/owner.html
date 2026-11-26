@@ -15,9 +15,10 @@
 <h1 id="title">Owner sign-in</h1>
 <p id="message" role="status"></p>
 
-<form id="loginForm" hidden><label>Email<input type="email" id="loginEmail" autocomplete="username" required></label><label>Password<input type="password" id="loginPassword" autocomplete="current-password" required></label><button>Sign in</button><button type="button" class="linkish" id="showForgot">Forgotten your password?</button></form>
+<form id="signupForm" hidden><label>Email<input id="signupEmail" type="email" autocomplete="username" required></label><label>Password (at least 12 characters)<input id="signupPassword" type="password" autocomplete="new-password" minlength="12" maxlength="200" required></label><button>Create account</button><button type="button" id="signupBack">Back to sign-in</button></form>
+<form id="loginForm" hidden><label>Email<input type="email" id="loginEmail" autocomplete="username" required></label><label>Password<input type="password" id="loginPassword" autocomplete="current-password" required></label><button>Sign in</button><button type="button" id="signupLink">Create an account</button><button type="button" id="ownerSetup" hidden>Set up the original owner account</button><button type="button" class="linkish" id="showForgot">Forgotten your password?</button></form>
 
-<form id="forgotForm" hidden><p>Enter the owner email address and we’ll send a reset link.</p><label>Email<input type="email" id="forgotEmail" autocomplete="username" required></label><button>Send reset link</button><button type="button" class="linkish" id="backToLogin">Back to sign-in</button></form>
+<form id="forgotForm" hidden><p>Enter your account email address and we’ll send a reset link.</p><label>Email<input type="email" id="forgotEmail" autocomplete="username" required></label><button>Send reset link</button><button type="button" class="linkish" id="backToLogin">Back to sign-in</button></form>
 
 <form id="resetForm" hidden><p>Choose a new password of at least 12 characters.</p><label>New password<input type="password" id="resetPassword" autocomplete="new-password" minlength="12" required></label><label>Repeat new password<input type="password" id="resetConfirm" autocomplete="new-password" minlength="12" required></label><button>Set new password</button></form>
 
@@ -26,10 +27,10 @@
 <div id="dashboard" hidden>
 <p>Signed in as <strong id="ownerEmail"></strong>.</p>
 <p><a class="button" href="/#admin=session">Open calendar admin</a> <button type="button" class="secondary" id="logout">Sign out</button></p>
-<h2>Microsoft 365 sender</h2>
+<section id="senderSettings"><h2>Microsoft 365 sender</h2>
 <div id="senderBox"></div>
 <p><a class="button" id="connectSender" href="/api/owner?action=ms-connect">Connect Microsoft 365 sender</a> <button type="button" class="secondary" id="testSender" hidden>Send test email</button> <button type="button" class="linkish" id="disconnectSender" hidden>Disconnect</button></p>
-<h2>Change password</h2>
+</section><h2>Change password</h2>
 <form id="changeForm"><label>Current password<input type="password" id="currentPassword" autocomplete="current-password" required></label><label>New password<input type="password" id="newPassword" autocomplete="new-password" minlength="12" required></label><button>Change password</button></form>
 </div>
 </section></main><footer>✴ &nbsp; December Post</footer><script src="/owner.js"></script></body></html>
