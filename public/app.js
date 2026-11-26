@@ -122,7 +122,7 @@ async function refresh(){
     el('editor').hidden=true;
     el('topics').replaceChildren(...state.topics.map(t=>new Option(t.name,t.id)));
     el('topics').value=chosenTopic;
-    el('mode').hidden=false;el('mode').textContent='CALENDAR ADMIN';
+    el('mode').hidden=true;
     el('share').hidden=false;
   }
   el('grid').replaceChildren();
