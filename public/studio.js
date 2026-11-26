@@ -185,7 +185,6 @@ function display(c){
   current=c;el('recipientEmail').value=c?.email||'';el('categories').value=formatInterests(c?.interests||[]);
   el('calBg').selectedIndex=0;
   el('studioSections').hidden=!c;
-  el('manageCalendar').hidden=!c;
   showSection(c?activeSection:'recipientForm');
   el('delivery').hidden=!c;el('library').value=c?.id||'';
   el('build').textContent=c?'Save calendar changes':'Create calendar';
@@ -218,7 +217,7 @@ async function work(action){
 }
 async function open(id){
   if(hasEdits()&&!confirm('Discard your unsaved edits and open another calendar?')){el('library').value=current?.id||'';return}
-  const c=id?await api(id):null;drafts.clear();el('editDay').value='1';activeSection='recipientForm';el('manageCalendar').open=false;display(c);status.textContent='';
+  const c=id?await api(id):null;drafts.clear();el('editDay').value='1';activeSection='recipientForm';display(c);status.textContent='';
 }
 el('library').onchange=e=>work(async()=>{
   try{await open(e.target.value)}catch(error){el('library').value=current?.id||'';throw error}

@@ -83,8 +83,6 @@ header:has(#adminHome:not([hidden])) nav{margin-left:auto}
 #studioStatus:not(:empty){padding:8px 12px;border-left:3px solid #d4b477;text-align:left}
 #studio #delivery{margin-top:12px}
 #doorForm #matches{margin-bottom:16px}
-#studio #manageCalendar{margin-top:20px;border-top:1px solid #52677a}
-#manageCalendar summary{cursor:pointer;width:fit-content}
 #shareSection{display:grid;gap:14px;padding:clamp(14px,2vw,24px);border:1px solid #708294;border-radius:8px}
 #shareSection h3{margin:0;color:#ffe2ac;font:400 28px var(--book)}
 #shareSection .inviteActions{margin:0}
