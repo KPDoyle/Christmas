@@ -83,11 +83,11 @@ function showGift(){
       catch(e){if(e.name!=='AbortError')prompt('Copy sample link',url)}
     };
     title.textContent='Christmas, made for you.';
+    intro.hidden=false;
     intro.textContent='25 illustrated doors filled with their favourite things and messages from you.';
     el('mode').hidden=false;el('mode').textContent='EXPLORE A SAMPLE GIFT';
   }else if(recipient && state.recipientName){
     title.textContent='Christmas for '+state.recipientName;
-    intro.textContent='December 2026';
   }
   el('letter').hidden=!(state.dedication||state.senderName||state.recipientName);
   el('toLine').textContent=state.recipientName?'Dear '+state.recipientName+',':'';
