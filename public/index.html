@@ -4,7 +4,7 @@
 <button hidden type="button" id="deleteCalendar">Delete selected calendar</button><form id="lookup"><label>Or paste an invitation link <input type="url" id="lookupUrl" required></label><button>Open calendar</button></form>
 <form id="recipientForm"><fieldset><legend>Recipient and interests</legend>
 <label>Recipient email<input type="email" id="recipientEmail" required autocomplete="off"></label>
-<label>Interests · one per line<textarea id="categories" rows="4" required placeholder="Minions decorating a Christmas tree&#10;Horses pulling sleighs in the snow"></textarea><small>Include characters, activities or settings. Up to 8 interests, 200 characters each.</small></label>
+<label>Interests<textarea id="categories" rows="2" required placeholder="Minions and Christmas, horses, dogs and snow"></textarea><small>Separate searches with commas. Use “and” within a search to require both interests. Up to 8 searches.</small></label>
 <label>Content style<select id="calStyle"></select></label><label>Background style<select id="calBg"></select><img class="artSample" id="calendarArt" alt=""></label>
 <button id="build">Find content and create calendar</button></fieldset></form>
 <div id="delivery" hidden><label>Private invitation<input id="inviteUrl" readonly></label><button id="copyInvite">Copy invitation</button> <a id="mailInvite">Email invitation</a> · <a id="previewInvite" target="_blank" rel="noopener">Test all 25 doors now</a>

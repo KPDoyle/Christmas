@@ -21,6 +21,7 @@ function requireChoice(value,options){
 }
 function categories(value){
   if(!Array.isArray(value)||!value.length||value.length>8||value.some(s=>typeof s!=='string'||!s.trim()||s.length>200))throw bad('Enter one to eight interests, up to 200 characters each.');
+  if(value.some(s=>s.split(/\band\b/i).some(part=>!part.trim())))throw bad('Add an interest on each side of “and”.');
   return [...new Set(value.map(s=>s.trim()))];
 }
 async function populate(doors,indexes){

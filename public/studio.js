@@ -11,6 +11,25 @@ async function api(id,options={},day){
   return r.json();
 }
 const post=data=>({method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+function formatInterests(values){
+  return values.map(value=>/[",\n]/.test(value)?'"'+value.replace(/"/g,'""')+'"':value).join(', ');
+}
+function parseInterests(input){
+  const groups=[];let part='',quoted=false;
+  for(let i=0;i<input.length;i++){
+    const ch=input[i];
+    if(ch==='"' && (quoted || !part.trim())){
+      if(quoted && input[i+1]==='"'){part+='"';i++}
+      else quoted=!quoted;
+    }else if(!quoted && (ch===','||ch==='\n')){
+      if(part.trim())groups.push(part.trim());
+      part='';
+    }else part+=ch;
+  }
+  if(quoted)throw Error('Close the quotation mark around your search.');
+  if(part.trim())groups.push(part.trim());
+  return groups;
+}
 function previewArt(){
   const selected=el('calBg').value;
   if(!selected)return;
@@ -31,7 +50,7 @@ function door(){
 }
 function display(c){
   el('deleteCalendar').hidden=!c;
-  current=c;el('recipientEmail').value=c?.email||'';el('categories').value=c?.interests.join('\n')||'';
+  current=c;el('recipientEmail').value=c?.email||'';el('categories').value=formatInterests(c?.interests||[]);
   el('calStyle').selectedIndex=0;el('calBg').selectedIndex=0;
   el('delivery').hidden=!c;el('library').value=c?.id||'';
   el('build').textContent=c?'Save calendar changes':'Find content and create calendar';
@@ -82,7 +101,7 @@ el('lookup').onsubmit=e=>{e.preventDefault();work(async()=>{
 })};
 el('recipientForm').onsubmit=e=>{e.preventDefault();work(async()=>{
   status.textContent='Finding content and preparing the calendar…';
-  const data={email:el('recipientEmail').value,interests:el('categories').value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean),style:el('calStyle').value,background:el('calBg').value,version:current?.version};
+  const data={email:el('recipientEmail').value,interests:parseInterests(el('categories').value),style:el('calStyle').value,background:el('calBg').value,version:current?.version};
   display(await api(current?.id,post(data)));status.textContent='Calendar saved. Your private invitation is ready.';
 })};
 el('editDay').onchange=door;
