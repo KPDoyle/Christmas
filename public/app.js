@@ -90,7 +90,6 @@ function showGift(){
     title.textContent='Christmas, made for you.';
     intro.textContent='25 illustrated doors filled with their favourite things and messages from you.';
     el('mode').textContent='EXPLORE A SAMPLE GIFT';
-    el('hint').textContent='Open any of the 25 doors to explore this sample.';
   }else if(recipient && state.recipientName){
     title.textContent='Christmas for '+state.recipientName;
     intro.textContent='December 2026';
@@ -100,18 +99,6 @@ function showGift(){
   el('giftMessage').textContent=state.dedication||'';
   el('fromLine').textContent=state.senderName?'From '+state.senderName:'';
 }
-function updateJourney(){
-  if(state.guest)return;
-  const limit=25;
-  const available=Math.min(state.unlocked,limit);
-  const next=Array.from({length:available},(_,i)=>i+1).find(n=>!opened.has(n));
-  el('journey').hidden=false;
-  const count=[...opened].filter(n=>n>=1&&n<=limit).length;
-  el('progressText').textContent=count+' of '+limit+' '+(demo?'sample ':'')+'doors opened';
-  el('doorProgress').max=limit;el('doorProgress').value=count;
-  el('nextDoor').hidden=!next;
-  if(next){el('nextDoor').textContent=(demo?'Try door ':'Open door ')+next;el('nextDoor').onclick=()=>openDay(next)}
-}
 async function refresh(){
   if(demo)state={unlocked:25,recipientName:'Alex',senderName:'Sam',dedication:({travel:'A December full of places I’d love to explore with you.',food:'For the cook who makes our kitchen the warmest place in December.',stage:'For my favourite person to sit beside when the house lights go down.'})[sampleTheme]};
   else {
@@ -119,7 +106,7 @@ async function refresh(){
   if(!r.ok) throw Error('The calendar could not load. Please refresh.');
   state=await r.json();
   }
-  showGift();updateJourney();
+  showGift();
   if(recipient){
     const theme=themeImage(state.background);
     const catalog=(state.backgrounds||[]).map(themeImage);
@@ -133,7 +120,6 @@ async function refresh(){
   if(state.preview){
     if(recipient){const home=el('adminHome');home.hidden=false;home.onclick=()=>{location.hash='admin=session&edit='+encodeURIComponent(recipient.split('.')[0]);location.reload()}}
     el('mode').textContent='TEST CALENDAR';
-    el('hint').textContent='All 25 doors are open for testing.';
   }
   if(state.guest){
     try{sessionStorage.setItem('calendarAdminHome',location.hash)}catch{}
@@ -145,7 +131,6 @@ async function refresh(){
     el('topics').value=chosenTopic;
     el('mode').textContent='CALENDAR ADMIN';
     el('share').hidden=false;
-    el('hint').textContent=(state.filled.length)+' personal photos added. Preview any door or add a photo to its Christmas postcard.';
   }
   el('grid').replaceChildren();
   for(let n=1;n<=25;n++){
@@ -175,7 +160,7 @@ async function openDay(n){
     const img=new Image();img.src='/'+themeImage(scene)+'.webp';img.alt=scene;
     el('series').textContent=scene;el('media').replaceChildren(img);
     el('postNote').textContent=note;el('postNote').hidden=false;el('card').hidden=false;el('notice').textContent='';
-    opened.add(n);saveProgress();showOpened(el('door-'+n),n);updateJourney();return;
+    opened.add(n);saveProgress();showOpened(el('door-'+n),n);return;
   }
   try{
     const query=new URLSearchParams({card:'1',day:n,topic:chosenTopic});
@@ -188,7 +173,7 @@ async function openDay(n){
     const card=await cardResponse.json();
     if(current!==request)return;
     opened.add(n);saveProgress();showOpened(el('door-'+n),n);
-    updateJourney();el('postNote').textContent=card.note||'';el('postNote').hidden=!card.note;
+    el('postNote').textContent=card.note||'';el('postNote').hidden=!card.note;
     if(card.background)el('card').style.setProperty('--postcard-art','url(/'+themeImage(card.background)+'.webp)');
     el('series').textContent=card.topic;
     if(card.media){
@@ -263,7 +248,7 @@ async function startCalendar(){
   for(const [i,v] of ['--street','--market','--inn'].entries())street.style.setProperty(v,'url(/'+paintings[(visit+i)%3]+'.webp)');
   await refresh();
 }
-startCalendar().catch(e=>el('hint').textContent=e.message);
+startCalendar().catch(e=>{el('hint').hidden=false;el('hint').textContent=e.message});
 
 el('topics').onchange=e=>{
   chosenTopic=e.currentTarget.value;
@@ -291,15 +276,3 @@ function mediaUrl(media,thumb=false){
   return media.scene?'/'+themeImage(media.scene)+'.webp':'https://media.giphy.com/media/'+encodeURIComponent(media.id)+(thumb?'/200w_s.gif':'/giphy.gif');
 }
 
-const pauseScene=el('pauseScene');
-function setScenePaused(paused){
-  street.classList.toggle('paused',paused);
-  pauseScene.setAttribute('aria-pressed',String(paused));
-  pauseScene.textContent=paused?'Resume scenery':'Pause scenery';
-}
-try{setScenePaused(localStorage.getItem('calendar-post:pause-scene')==='yes')}catch{}
-pauseScene.onclick=()=>{
-  const paused=!street.classList.contains('paused');
-  setScenePaused(paused);
-  try{localStorage.setItem('calendar-post:pause-scene',paused?'yes':'no')}catch{}
-};
