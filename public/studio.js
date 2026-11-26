@@ -51,7 +51,7 @@ function door(){
   const d=current.doors[Number(el('editDay').value)-1];
   el('dayNote').value=d.note||'';
   el('doorInterest').value=d.category;el('doorStyle').value=d.style;el('doorBg').value=d.background||'';
-  previewArt();el('replaceGif').checked=false;
+  previewArt();
   const image=new Image();image.alt=d.category;image.src=mediaUrl(d.media);
   el('miniPreview').replaceChildren(image);
 }
@@ -116,8 +116,9 @@ el('recipientForm').onsubmit=e=>{e.preventDefault();work(async()=>{
 })};
 el('editDay').onchange=door;
 el('doorForm').onsubmit=e=>{e.preventDefault();work(async()=>{
-  const data={note:el('dayNote').value,category:el('doorInterest').value,style:el('doorStyle').value,background:el('doorBg').value,replace:el('replaceGif').checked,version:current.version};
-  display(await api(current.id,post(data),el('editDay').value));status.textContent='Window saved to the existing invitation.';
+  const data={note:el('dayNote').value,category:el('doorInterest').value,style:el('doorStyle').value,background:el('doorBg').value,replace:e.submitter?.id==='replaceGif',version:current.version};
+  if(data.replace)status.textContent='Searching for a different animation…';
+  display(await api(current.id,post(data),el('editDay').value));status.textContent=data.replace?'New animation saved to this window.':'Window saved to the existing invitation.';
 })};
 el('copyInvite').onclick=async()=>{try{await navigator.clipboard.writeText(el('inviteUrl').value);status.textContent='Invitation copied.'}catch{el('inviteUrl').select();status.textContent='Copy the selected invitation.'}};
 el('recipientPhoto').onchange=e=>{const file=e.target.files[0];if(!file)return;work(async()=>{

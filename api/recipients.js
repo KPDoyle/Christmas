@@ -111,7 +111,13 @@ export default async function handler(req,res){
       const background=input.background?requireChoice(input.background,backgrounds):'';
       next={...c,doors:[...c.doors]};
       next.doors[day-1]={...old,category,style,background,note:personalText(input.note??old.note,320),custom:true};
-      if(category!==old.category||style!==old.style||input.replace)await populate(next.doors,[day-1]);
+      if(input.replace){
+        const alternatives=await findGifs(category,{style,needed:25,exclude:new Set([old.media?.id])});
+        const used=new Set(c.doors.map(d=>d.media?.id));
+        const replacement=alternatives.find(m=>!used.has(m.id))||alternatives[0];
+        if(!replacement)return res.status(422).send('No different animation was found. Your current window is still saved. Try another interest or upload a photo.');
+        next.doors[day-1].media=replacement;
+      }else if(category!==old.category||style!==old.style)await populate(next.doors,[day-1]);
     }else{
       const email=String(input.email||'').trim();
       if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254)throw bad('Enter a valid email.');
