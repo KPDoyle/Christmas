@@ -50,18 +50,15 @@ let progressKey='december-post:2026:'+role+':'+(demo?'public-sample-'+sampleThem
 function readProgress(){
   try{return JSON.parse(localStorage.getItem(progressKey))||{}}catch{return {}}
 }
-let visit=0;
 const opened=new Set();
 function restoreProgress(){
-const previous=readProgress();
-opened.clear();for(const n of previous.days||[])opened.add(n);
-visit=opened.size?(Number(previous.visit)||0)+1:0;
-if(opened.size)saveProgress();
+  opened.clear();
+  for(const n of readProgress().days||[])opened.add(n);
 }
 function saveProgress(){
   const latest=readProgress();
   for(const n of latest.days||[])opened.add(n);
-  try{localStorage.setItem(progressKey,JSON.stringify({days:[...opened],visit:Math.max(visit,Number(latest.visit)||0)}))}catch{}
+  try{localStorage.setItem(progressKey,JSON.stringify({days:[...opened]}))}catch{}
 }
 const paintings=["scenes/village-christmas-carollers","scenes/victorian-christmas-by-the-fireside","scenes/christmas-eve-in-london"];
 const street=document.querySelector('.street');
@@ -129,8 +126,8 @@ async function refresh(){
   for(let n=1;n<=25;n++){
     const b=document.createElement('button');
     b.className='door'+(n<=state.unlocked?' available':'');
-    const [x,y]=windows[(n-1+visit*7)%25];
-    b.style.setProperty('--slot',(n-1+visit*7)%25);b.style.left=x+'%';b.style.top=y+'%';
+    const [x,y]=windows[n-1];
+    b.style.setProperty('--slot',n-1);b.style.left=x+'%';b.style.top=y+'%';
     b.dataset.mark=marks[(n*3+Math.floor(n/5))%5];
     b.textContent=String(n).padStart(2,'0');
     b.setAttribute('aria-label',n+' December'+(state.filled?.includes(n)?', photo ready':''));
