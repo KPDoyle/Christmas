@@ -43,12 +43,14 @@ el('doorBg').addEventListener('change',previewArt);
 function door(){
   if(!current)return;
   const d=current.doors[Number(el('editDay').value)-1];
+  el('dayNote').value=d.note||'';
   el('doorInterest').value=d.category;el('doorStyle').value=d.style;el('doorBg').value=d.background||'';
   previewArt();el('replaceGif').checked=false;
   const image=new Image();image.alt=d.category;image.src='https://media.giphy.com/media/'+encodeURIComponent(d.media.id)+'/giphy.gif';
   el('miniPreview').replaceChildren(image);
 }
 function display(c){
+  for(const field of ['recipientName','senderName','dedication'])el(field).value=c?.[field]||'';
   el('deleteCalendar').hidden=!c;
   current=c;el('recipientEmail').value=c?.email||'';el('categories').value=formatInterests(c?.interests||[]);
   el('calStyle').selectedIndex=0;el('calBg').selectedIndex=0;
@@ -101,12 +103,12 @@ el('lookup').onsubmit=e=>{e.preventDefault();work(async()=>{
 })};
 el('recipientForm').onsubmit=e=>{e.preventDefault();work(async()=>{
   status.textContent='Finding content and preparing the calendar…';
-  const data={email:el('recipientEmail').value,interests:parseInterests(el('categories').value),style:el('calStyle').value,background:el('calBg').value,version:current?.version};
+  const data={recipientName:el('recipientName').value,senderName:el('senderName').value,dedication:el('dedication').value,email:el('recipientEmail').value,interests:parseInterests(el('categories').value),style:el('calStyle').value,background:el('calBg').value,version:current?.version};
   display(await api(current?.id,post(data)));status.textContent='Calendar saved. Your private invitation is ready.';
 })};
 el('editDay').onchange=door;
 el('doorForm').onsubmit=e=>{e.preventDefault();work(async()=>{
-  const data={category:el('doorInterest').value,style:el('doorStyle').value,background:el('doorBg').value,replace:el('replaceGif').checked,version:current.version};
+  const data={note:el('dayNote').value,category:el('doorInterest').value,style:el('doorStyle').value,background:el('doorBg').value,replace:el('replaceGif').checked,version:current.version};
   display(await api(current.id,post(data),el('editDay').value));status.textContent='Window saved to the existing invitation.';
 })};
 el('copyInvite').onclick=async()=>{try{await navigator.clipboard.writeText(el('inviteUrl').value);status.textContent='Invitation copied.'}catch{el('inviteUrl').select();status.textContent='Copy the selected invitation.'}};

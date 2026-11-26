@@ -19,6 +19,11 @@ function requireChoice(value,options){
   if(!options.includes(value))throw bad('Choose a listed style.');
   return value;
 }
+function personalText(value,max){
+  if(value==null)return '';
+  if(typeof value!=='string'||value.trim().length>max)throw bad('Personal message exceeds '+max+' characters.');
+  return value.trim();
+}
 function categories(value){
   if(!Array.isArray(value)||!value.length||value.length>8||value.some(s=>typeof s!=='string'||!s.trim()||s.length>200))throw bad('Enter one to eight interests, up to 200 characters each.');
   if(value.some(s=>s.split(/\band\b/i).some(part=>!part.trim())))throw bad('Add an interest on each side of “and”.');
@@ -83,12 +88,12 @@ export default async function handler(req,res){
       if(day){
         if(day>unlocked)return res.status(423).end();
         const door=c.doors[day-1];
-        if(req.query.card==='1')return res.json({topic:door.category,media:door.media,background:door.background||c.background});
+        if(req.query.card==='1')return res.json({topic:door.category,note:door.note||'',media:door.media,background:door.background||c.background});
         const photo=await get('recipient-photos/'+id+'/'+day+'.jpg',{access:'private',useCache:false});
         if(photo?.statusCode!==200)return res.status(404).end();
         res.setHeader('Content-Type','image/jpeg');return res.send(Buffer.from(await new Response(photo.stream).arrayBuffer()));
       }
-      return res.json(admin?view(c):{unlocked,preview:test,background:c.background,backgrounds});
+      return res.json(admin?view(c):{unlocked,preview:test,recipientName:c.recipientName||'',senderName:c.senderName||'',dedication:c.dedication||'',background:c.background,backgrounds});
     }
     if(!admin)return res.status(403).end();
     if(req.method==='POST'&&day&&c&&typeof req.body?.photo==='string'){
@@ -107,7 +112,7 @@ export default async function handler(req,res){
       const old=c.doors[day-1];
       const background=input.background?requireChoice(input.background,backgrounds):'';
       next={...c,doors:[...c.doors]};
-      next.doors[day-1]={...old,category,style,background,custom:true};
+      next.doors[day-1]={...old,category,style,background,note:personalText(input.note??old.note,320),custom:true};
       if(category!==old.category||style!==old.style||input.replace)await populate(next.doors,[day-1]);
     }else{
       const email=String(input.email||'').trim();
@@ -117,10 +122,10 @@ export default async function handler(req,res){
       const doors=Array.from({length:25},(_,i)=>{
         const old=c?.doors[i],category=interests[i%interests.length];
         if(old&&(old.custom||(old.category===category&&old.style===style)))return old;
-        indexes.push(i);return {category,style,background:'',custom:false};
+        indexes.push(i);return {category,style,background:'',note:old?.note||'',custom:false};
       });
       await populate(doors,indexes);
-      next={id:c?.id||randomBytes(16).toString('hex'),email,interests,style,background,doors};
+      next={id:c?.id||randomBytes(16).toString('hex'),email,interests,style,background,doors,recipientName:personalText(input.recipientName??c?.recipientName,60),senderName:personalText(input.senderName??c?.senderName,60),dedication:personalText(input.dedication??c?.dedication,400)};
     }
     next.version=randomBytes(12).toString('hex');
     // Detect an intervening edit while online search was running.
