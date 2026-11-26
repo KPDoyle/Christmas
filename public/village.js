@@ -1,11 +1,12 @@
 // Two depths of falling snow and small pools of gaslight across the painted street.
 const flakes=document.querySelector('.flurries');
-for(let i=0;i<70;i++){
+for(let i=0;i<168;i++){
   const flake=document.createElement('i');
   flake.style.left=(i*37%103)+'%';
-  flake.style.setProperty('--size',(1+i%4)+'px');
-  flake.style.animationDuration=(7+i%8)+'s';
+  flake.style.setProperty('--size',(1+i%5)+'px');
+  flake.style.animationDuration=(5+i%9)+'s';
   flake.style.animationDelay=-(i*1.79)+'s';
+  flake.style.pointerEvents='none';
   flakes.append(flake);
 }
 const lights=document.querySelector('.lights');
