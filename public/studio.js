@@ -9,6 +9,11 @@ document.addEventListener('click',event=>{
 const studio=el('studio'),status=el('studioStatus');
 const previewScene=document.querySelector('.street-scroll');
 el('studioPreviewHeading').hidden=false;
+if(!params.has('edit'))previewScene.after(studio);
+el('managePreviewCalendar').onclick=()=>{
+  el('library').focus({preventScroll:true});
+  studio.scrollIntoView({block:'start'});
+};
 previewScene.setAttribute('role','region');
 previewScene.setAttribute('aria-labelledby','studioPreviewTitle');
 previewScene.removeAttribute('aria-label');
@@ -16,7 +21,7 @@ previewScene.removeAttribute('aria-label');
 fetch('/api/owner?action=status',{credentials:'same-origin'}).then(r=>r.ok?r.json():null).then(s=>{
   if(!s)return;
   const note=document.createElement('p');note.id='ownerNotice';note.setAttribute('role','status');
-  const link=(text)=>{const a=document.createElement('a');a.href='/owner.html';a.textContent=text;return a};
+  const link=(text)=>{const a=document.createElement('a');a.href='/owner.html?settings';a.textContent=text;return a};
   let warn=false;
   if(params.get('admin')==='session'&&!s.loggedIn){note.append('Your owner session has ended. ',link('Sign in again'));warn=true}
   else if(s.setupRequired){note.append('No owner login yet. ',link('Set your owner password'));warn=true}
@@ -348,6 +353,9 @@ api().then(async data=>{
   for(let i=1;i<=25;i++)el('editDay').add(new Option(i+' December',String(i)));
   for(const c of data.calendars)el('library').add(new Option(c.email+' · '+c.id.slice(-6),c.id));
   const edit=params.get('edit');
-  if(edit && data.calendars.some(c=>c.id===edit))await open(edit);else display(null);
+  const first=data.calendars[0];
+  if(edit && data.calendars.some(c=>c.id===edit))await open(edit);
+  else if(first)await open(first.id);
+  else display(null);
 }).catch(e=>{studio.hidden=false;status.textContent=e.message});
 })();
