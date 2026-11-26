@@ -126,7 +126,16 @@ export default async function handler(req,res){
       const background=input.background?requireChoice(input.background,backgrounds):'';
       next={...c,doors:[...c.doors]};
       next.doors[day-1]={...old,category,style,background,note:personalText(input.note??old.note,320),custom:true};
-      if(input.replace){
+      if(input.browse){
+        const matches=await findGifs(category,{style,needed:25,exclude:new Set([old.media?.id])});
+        return res.json({options:matches.map(media=>({media,proof:signature(JSON.stringify([id,day,c.version,category,media]),'animation-option')}))});
+      }
+      if(input.selection){
+        const {media,proof}=input.selection;
+        if(!media||proof!==signature(JSON.stringify([id,day,c.version,category,media]),'animation-option'))throw bad('Browse animations again before saving.');
+        next.doors[day-1].media=media;
+        next.doors[day-1].preferAnimation=true;
+      }else if(input.replace){
         const alternatives=await findGifs(category,{style,needed:25,exclude:new Set([old.media?.id])});
         const used=new Set(c.doors.map(d=>d.media?.id));
         const replacement=alternatives.find(m=>!used.has(m.id))||alternatives[0];

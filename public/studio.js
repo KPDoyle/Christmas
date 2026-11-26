@@ -84,6 +84,7 @@ el('calBg').addEventListener('change',previewArt);
 let mediaWindow='';
 let modeChanges=0;
 function setMediaMode(photo){
+  if(photo)clearChoices();
   el('photoPanel').hidden=!photo;
   el('animationPanel').hidden=photo;
   el('photoMode').setAttribute('aria-pressed',String(photo));
@@ -130,6 +131,7 @@ async function loadPhoto(id,day){
   }catch{if(request===photoRequest)caption.textContent='Saved photo preview unavailable.'}
 }
 function door(){
+  clearChoices();
   el('recipientFilename').textContent='';
   if(!current)return;
   activeDay=Number(el('editDay').value);
@@ -226,32 +228,67 @@ el('recipientForm').onsubmit=e=>{e.preventDefault();work(async()=>{
   status.textContent='Calendar saved. Your private invitation is ready.';
 })};
 el('editDay').onchange=door;
-function saveWindow(category,replace,topicChange=false){
-  return work(async()=>{
+let options=[],selectedOption=null;
+function clearChoices(){
+  options=[];selectedOption=null;
+  el('animationResults').hidden=true;
+  el('animationChoices').replaceChildren();
+  el('candidatePreview').hidden=true;
+  el('candidatePreview').removeAttribute('src');
+  el('saveAnimation').disabled=true;
+}
+function browseAnimations(){
+  const selector=el('animationTopic');
+  const topic=selector.value||prompt('Enter an animation topic for this window')?.trim();
+  clearChoices();
+  if(!topic){selector.value=current.doors[activeDay-1].category;return}
+  if(!Array.from(selector.options).some(o=>o.value===topic))selector.add(new Option(topic,topic),selector.options.length-1);
+  selector.value=topic;
+  work(async()=>{
+    status.textContent='Finding animations…';
     const door=current.doors[activeDay-1];
-    const data={note:topicChange?door.note:el('dayNote').value,category,style:door.style,background:door.background,replace,version:current.version};
-    if(data.replace)status.textContent='Searching for a different animation…';
-    const pendingCalendar=calendarChanged()?values(calendarFields):null;
-    const saved=await api(current.id,post(data),activeDay);
-    if(data.replace)updatePhotoTile(activeDay,mediaUrl(saved.doors[activeDay-1].media));
-    if(!topicChange)drafts.delete(activeDay);
-    display(saved);
-    if(pendingCalendar){applyValues(calendarFields,pendingCalendar);previewArt()}
-    status.textContent=data.replace?'New animation saved to this window.':'Window saved to the existing invitation.';
+    const result=await api(current.id,post({browse:true,category:topic,style:door.style,version:current.version}),activeDay);
+    options=result.options;
+    el('animationResults').hidden=false;
+    el('animationFeedback').textContent=options.length?'Choose an animation from the results.':'No matching animations. Try another topic.';
+    el('saveAnimation').hidden=!options.length;
+    el('animationChoices').replaceChildren(...options.map((option,index)=>{
+      const label=document.createElement('label');
+      const radio=document.createElement('input');
+      radio.type='radio';radio.name='animationChoice';
+      radio.setAttribute('aria-label',(index+1)+'. '+(option.media.title||topic));
+      const img=new Image();img.alt='';img.loading='lazy';img.src=mediaUrl(option.media,true);
+      radio.onchange=()=>{
+        selectedOption=option;
+        el('candidatePreview').src=mediaUrl(option.media);
+        el('candidatePreview').hidden=false;
+        el('saveAnimation').disabled=false;
+        el('animationFeedback').textContent='Animation '+(index+1)+' of '+options.length;
+        label.scrollIntoView({block:'nearest',inline:'nearest'});
+      };
+      label.append(radio,img);return label;
+    }));
+    status.textContent='';
   });
 }
-el('doorForm').onsubmit=e=>{
-  e.preventDefault();
-  saveWindow(current.doors[activeDay-1].category,e.submitter?.id==='replaceGif');
-};
-el('animationTopic').onchange=async event=>{
-  const selector=event.target;
-  const previous=current.doors[activeDay-1].category;
-  const topic=selector.value||prompt('Enter an animation topic for this window')?.trim();
-  if(!topic||topic===previous){selector.value=previous;return}
-  await saveWindow(topic,true,true);
-  selector.value=current.doors[activeDay-1].category;
-};
+el('animationTopic').onchange=browseAnimations;
+el('replaceGif').onclick=browseAnimations;
+function saveWindow(selection){
+  return work(async()=>{
+    const door=current.doors[activeDay-1];
+    const category=selection?el('animationTopic').value:door.category;
+    const data={note:selection?door.note:el('dayNote').value,category,style:door.style,background:door.background,selection,version:current.version};
+    const pendingCalendar=calendarChanged()?values(calendarFields):null;
+    const saved=await api(current.id,post(data),activeDay);
+    if(selection)updatePhotoTile(activeDay,mediaUrl(saved.doors[activeDay-1].media));
+    else drafts.delete(activeDay);
+    display(saved);
+    if(pendingCalendar){applyValues(calendarFields,pendingCalendar);previewArt()}
+    status.textContent=selection?'Selected animation saved to this window.':'Window saved to the existing invitation.';
+  });
+}
+el('doorForm').onsubmit=e=>{e.preventDefault();saveWindow(null)};
+el('saveAnimation').onclick=()=>{if(selectedOption)saveWindow(selectedOption)};
 el('copyInvite').onclick=async()=>{try{await navigator.clipboard.writeText(el('inviteUrl').value);status.textContent='Invitation copied.'}catch{el('inviteUrl').select();status.textContent='Copy the selected invitation.'}};
 el('recipientPhoto').onchange=e=>{const file=e.target.files[0];if(!file)return;++photoRequest;showPhoto(file);el('recipientFilename').textContent='Uploading '+file.name+'…';work(async()=>{
   const src=URL.createObjectURL(file);
