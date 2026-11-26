@@ -20,7 +20,28 @@ fetch('/api/owner?action=status',{credentials:'same-origin'}).then(r=>r.ok?r.jso
   if(warn)note.style.cssText='background:#fff3cd;color:#5a4300;border:1px solid #c79100;padding:.6rem;border-radius:.3rem';
   studio.prepend(note);
 }).catch(()=>{});
-let current=null,busy=false;
+let current=null,busy=false,activeDay=1;
+const drafts=new Map();
+const windowFields=['dayNote','doorInterest','doorStyle','doorBg'];
+const calendarFields=['recipientEmail','categories','calStyle','calBg','recipientName','senderName','dedication'];
+let calendarBaseline='';
+const values=fields=>fields.map(id=>el(id).value);
+const applyValues=(fields,data)=>fields.forEach((id,i)=>{el(id).value=data[i]});
+const calendarChanged=()=>JSON.stringify(values(calendarFields))!==calendarBaseline;
+function trackWindow(){
+  if(!current)return;
+  const d=current.doors[activeDay-1], data=values(windowFields);
+  if(JSON.stringify(data)===JSON.stringify([d.note||'',d.category,d.style,d.background||'']))drafts.delete(activeDay);
+  else drafts.set(activeDay,data);
+  updateDraftStatus();
+}
+function updateDraftStatus(){
+  el('draftStatus').textContent=drafts.size?'Unsaved windows: '+[...drafts.keys()].sort((a,b)=>a-b).join(', ')+'. Select a window and use Save window.':'';
+}
+el('doorForm').addEventListener('input',event=>{if(windowFields.includes(event.target.id))trackWindow()});
+function hasEdits(){return drafts.size>0||(calendarBaseline&&calendarChanged())}
+window.addEventListener('beforeunload',event=>{if(hasEdits()){event.preventDefault();event.returnValue=''}});
+
 const opts=(select,values)=>select.replaceChildren(...values.map(v=>new Option(v,v)));
 async function api(id,options={},day){
   const q=new URLSearchParams();
@@ -62,22 +83,27 @@ el('doorBg').addEventListener('change',previewArt);
 function door(){
   el('recipientFilename').textContent='';
   if(!current)return;
-  const d=current.doors[Number(el('editDay').value)-1];
+  activeDay=Number(el('editDay').value);
+  const d=current.doors[activeDay-1];
   el('dayNote').value=d.note||'';
   el('doorInterest').value=d.category;el('doorStyle').value=d.style;el('doorBg').value=d.background||'';
+  if(drafts.has(activeDay))applyValues(windowFields,drafts.get(activeDay));
   previewArt();
   const image=new Image();image.alt=d.category;image.src=mediaUrl(d.media);
   el('miniPreview').replaceChildren(image);
 }
 function display(c){
+  if(!c||current?.id!==c.id)drafts.clear();
+  updateDraftStatus();
   for(const field of ['recipientName','senderName','dedication'])el(field).value=c?.[field]||'';
   el('deleteCalendar').hidden=!c;
   current=c;el('recipientEmail').value=c?.email||'';el('categories').value=formatInterests(c?.interests||[]);
   el('calStyle').selectedIndex=0;el('calBg').selectedIndex=0;
   el('delivery').hidden=!c;el('library').value=c?.id||'';
   el('build').textContent=c?'Save calendar changes':'Create calendar';
-  if(!c){previewArt();return;}
+  if(!c){calendarBaseline=JSON.stringify(values(calendarFields));previewArt();return;}
   el('calStyle').value=c.style;el('calBg').value=c.background;
+  calendarBaseline=JSON.stringify(values(calendarFields));
   el('matchGrid').replaceChildren(...c.doors.map((d,i)=>{
     const tile=document.createElement('button');tile.type='button';tile.className='matchTile';
     const image=new Image();image.loading='lazy';image.alt='';image.src=mediaUrl(d.media,true);
@@ -90,7 +116,7 @@ function display(c){
   }));
   const url=shareOrigin+'/#calendar='+c.invite;
   el('inviteUrl').value=url;el('previewInvite').href='/#calendar='+c.test+'&preview=1';
-  el('previewInvite').onclick=e=>{e.preventDefault();location.hash='calendar='+c.test+'&preview=1';location.reload()};
+  el('previewInvite').target='_blank';el('previewInvite').rel='noopener';
   el('mailInvite').href='mailto:'+encodeURIComponent(c.email)+'?subject='+encodeURIComponent('Your Christmas advent calendar')+'&body='+encodeURIComponent('A little Christmas surprise for you. Open a window each day in December.\n\n'+url);
   let option=Array.from(el('library').options).find(o=>o.value===c.id);
   if(!option){option=new Option(c.email,c.id);el('library').add(option)}
@@ -102,10 +128,11 @@ async function work(action){
   finally{studio.inert=false;busy=false}
 }
 async function open(id){
-  const c=id?await api(id):null;el('editDay').value='1';display(c);status.textContent='';
+  if(hasEdits()&&!confirm('Discard your unsaved edits and open another calendar?')){el('library').value=current?.id||'';return}
+  const c=id?await api(id):null;drafts.clear();el('editDay').value='1';display(c);status.textContent='';
 }
 el('library').onchange=e=>work(async()=>{
-  try{await open(e.target.value)}catch(error){display(null);throw error}
+  try{await open(e.target.value)}catch(error){el('library').value=current?.id||'';throw error}
 });
 el('deleteCalendar').onclick=()=>{
   const selected=current;
@@ -135,7 +162,11 @@ el('editDay').onchange=door;
 el('doorForm').onsubmit=e=>{e.preventDefault();work(async()=>{
   const data={note:el('dayNote').value,category:el('doorInterest').value,style:el('doorStyle').value,background:el('doorBg').value,replace:e.submitter?.id==='replaceGif',version:current.version};
   if(data.replace)status.textContent='Searching for a different animation…';
-  display(await api(current.id,post(data),el('editDay').value));status.textContent=data.replace?'New animation saved to this window.':'Window saved to the existing invitation.';
+  const pendingCalendar=calendarChanged()?values(calendarFields):null;
+  const saved=await api(current.id,post(data),activeDay);
+  drafts.delete(activeDay);display(saved);
+  if(pendingCalendar){applyValues(calendarFields,pendingCalendar);previewArt()}
+ status.textContent=data.replace?'New animation saved to this window.':'Window saved to the existing invitation.';
 })};
 el('copyInvite').onclick=async()=>{try{await navigator.clipboard.writeText(el('inviteUrl').value);status.textContent='Invitation copied.'}catch{el('inviteUrl').select();status.textContent='Copy the selected invitation.'}};
 el('recipientPhoto').onchange=e=>{const file=e.target.files[0];if(!file)return;el('recipientFilename').textContent=file.name;work(async()=>{
