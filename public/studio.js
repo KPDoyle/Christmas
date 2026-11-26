@@ -7,6 +7,11 @@ document.addEventListener('click',event=>{
   }
 },true);
 const studio=el('studio'),status=el('studioStatus');
+const previewScene=document.querySelector('.street-scroll');
+el('studioPreviewHeading').hidden=false;
+previewScene.setAttribute('role','region');
+previewScene.setAttribute('aria-labelledby','studioPreviewTitle');
+previewScene.removeAttribute('aria-label');
 // Owner account / Microsoft 365 sender notice for admins.
 fetch('/api/owner?action=status',{credentials:'same-origin'}).then(r=>r.ok?r.json():null).then(s=>{
   if(!s)return;
@@ -82,7 +87,16 @@ function parseInterests(input){
   if(part.trim())groups.push(part.trim());
   return groups;
 }
+function previewLetter(){
+  const name=el('recipientName').value.trim(),sender=el('senderName').value.trim(),message=el('dedication').value.trim();
+  el('studioPreviewLetter').hidden=!(name||sender||message);
+  el('previewTo').textContent=name?'Dear '+name+',':'';
+  el('previewMessage').textContent=message;
+  el('previewFrom').textContent=sender?'From '+sender:'';
+}
+for(const id of ['recipientName','senderName','dedication'])el(id).addEventListener('input',previewLetter);
 function previewArt(){
+  previewLetter();
   const selected=el('calBg').value;
   if(!selected)return;
   const theme=themeImage(selected);
@@ -182,6 +196,7 @@ function display(c){
   updateDraftStatus();
   for(const field of ['recipientName','senderName','dedication'])el(field).value=c?.[field]||'';
   el('deleteCalendar').hidden=!c;
+  el('openStudioPreview').hidden=!c;
   current=c;el('recipientEmail').value=c?.email||'';el('categories').value=formatInterests(c?.interests||[]);
   el('calBg').selectedIndex=0;
   el('studioSections').hidden=!c;
@@ -204,6 +219,7 @@ function display(c){
   for(const [day,src] of doorPhotos)updatePhotoTile(day,src);
   const url=shareOrigin+'/#calendar='+c.invite;
   el('inviteUrl').value=url;el('previewInvite').href='/#calendar='+c.test+'&preview=1';
+  el('openStudioPreview').href=el('previewInvite').href;
   el('previewInvite').target='_blank';el('previewInvite').rel='noopener';
   el('mailInvite').href='mailto:'+encodeURIComponent(c.email)+'?subject='+encodeURIComponent('Your Christmas advent calendar')+'&body='+encodeURIComponent('A little Christmas surprise for you. Open a window each day in December.\n\n'+url);
   let option=Array.from(el('library').options).find(o=>o.value===c.id);
