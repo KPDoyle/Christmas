@@ -63,7 +63,7 @@ function saveProgress(){
   for(const n of latest.days||[])opened.add(n);
   try{localStorage.setItem(progressKey,JSON.stringify({days:[...opened],visit:Math.max(visit,Number(latest.visit)||0)}))}catch{}
 }
-const paintings=['carol','market','inn'];
+const paintings=["scenes/village-christmas-carollers","scenes/victorian-christmas-by-the-fireside","scenes/christmas-eve-in-london"];
 const street=document.querySelector('.street');
 for(const [index,variable] of ['--street','--market','--inn'].entries()){
   street.style.setProperty(variable,'url(/'+paintings[(visit+index)%3]+'.webp)');
