@@ -13,13 +13,15 @@
 <label class="windowDay">Choose a window<select id="editDay"></select></label>
 <div class="windowColumns">
   <div class="windowMedia">
-    <label class="photoPicker">Add or replace photo for this window
-      <span class="choosePhotoText">Choose photo</span>
-      <input type="file" accept="image/*" id="recipientPhoto">
-    </label>
+    <div id="windowPhotoHeading">Add or replace photo for this window</div>
+    <div class="windowMediaActions" role="group" aria-labelledby="windowPhotoHeading">
+      <label class="photoPicker"><span class="choosePhotoText">Choose photo</span>
+        <input type="file" accept="image/*" id="recipientPhoto">
+      </label>
+      <button type="submit" id="replaceGif">Find a different animation</button>
+    </div>
     <span id="recipientFilename" class="fileName" role="status"></span>
     <img id="savedPhotoPreview" hidden alt="Selected calendar window preview">
-    <button type="submit" id="replaceGif">Find a different animation</button>
   </div>
   <div class="windowMessage">
     <label>Personal note for this day<textarea id="dayNote" rows="5" maxlength="320"></textarea></label>
