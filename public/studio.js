@@ -81,6 +81,17 @@ function previewArt(){
   el('calendarArt').alt=selected;
 }
 el('calBg').addEventListener('change',previewArt);
+let mediaWindow='';
+let modeChanges=0;
+function setMediaMode(photo){
+  el('photoPanel').hidden=!photo;
+  el('animationPanel').hidden=photo;
+  el('photoMode').setAttribute('aria-pressed',String(photo));
+  el('animationMode').setAttribute('aria-pressed',String(!photo));
+}
+for(const id of ['photoMode','animationMode']){
+  el(id).onclick=()=>{modeChanges++;setMediaMode(id==='photoMode')};
+}
 let photoRequest=0;
 let previewUrl='';
 function showPhoto(blob){
@@ -93,6 +104,11 @@ function showPhoto(blob){
 }
 async function loadPhoto(id,day){
   const request=++photoRequest;
+  const key=id+'/'+day;
+  const autoSelect=mediaWindow!==key;
+  const changes=modeChanges;
+  mediaWindow=key;
+  if(autoSelect)setMediaMode(false);
   showPhoto(null);
   const door=current.doors[day-1];
   const preview=el('savedPhotoPreview');
@@ -109,6 +125,7 @@ async function loadPhoto(id,day){
     const blob=await response.blob();
     if(request!==photoRequest)return;
     showPhoto(blob);
+    if(autoSelect && modeChanges===changes)setMediaMode(true);
     caption.textContent='Saved photo for window '+day;
   }catch{if(request===photoRequest)caption.textContent='Saved photo preview unavailable.'}
 }
@@ -137,7 +154,7 @@ function updatePhotoTile(day,src){
 }
 function display(c){
   if(studioCalendarId!==(c?.id||'')){
-    photoRequest++;showPhoto(null);doorPhotos.clear();
+    photoRequest++;mediaWindow='';showPhoto(null);doorPhotos.clear();
     document.querySelectorAll('.street .door').forEach(tile=>tile.style.removeProperty('--uploaded-photo'));
   }
   studioCalendarId=c?.id||'';

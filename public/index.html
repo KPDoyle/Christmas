@@ -13,13 +13,19 @@
 <label class="windowDay">Choose a window<select id="editDay"></select></label>
 <div class="windowColumns">
   <div class="windowMedia">
-    <div id="windowPhotoHeading">Add or replace photo for this window</div>
-    <div class="windowMediaActions" role="group" aria-labelledby="windowPhotoHeading">
-      <label class="photoPicker"><span class="choosePhotoText">Choose photo</span>
+    <div class="mediaSwitch" role="group" aria-label="Edit window content">
+      <button type="button" id="animationMode" aria-pressed="true" aria-controls="animationPanel">Animation</button>
+      <button type="button" id="photoMode" aria-pressed="false" aria-controls="photoPanel">Photo</button>
+    </div>
+    <div id="animationPanel" class="mediaPanel">
+      <label>Animation topic<select id="animationTopic"></select></label>
+      <button type="submit" id="replaceGif">Find a different animation</button>
+    </div>
+    <div id="photoPanel" class="mediaPanel" hidden>
+      <label class="photoPicker">Add or replace photo for this window
+        <span class="choosePhotoText">Choose photo</span>
         <input type="file" accept="image/*" id="recipientPhoto">
       </label>
-      <button type="submit" id="replaceGif">Find a different animation</button>
-      <label class="animationTopic">Animation topic<select id="animationTopic"></select></label>
     </div>
     <span id="recipientFilename" class="fileName" role="status"></span>
     <img id="savedPhotoPreview" hidden alt="Selected calendar window preview">
