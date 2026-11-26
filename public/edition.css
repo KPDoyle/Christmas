@@ -102,3 +102,7 @@ header:has(#adminHome:not([hidden])) nav{margin-left:auto}
 #doorForm #matches{margin-top:6px}
 #doorForm .windowMessage{padding:16px;border:1px solid #617487;border-radius:8px}
 @media(max-width:480px){.dayToolbar label{flex:1 1 100px}}
+
+.animationSearchRow{display:flex;align-items:end;gap:8px;margin-bottom:12px}
+.animationSearchRow label{flex:1;min-width:0}
+#studio .animationSearchRow input{min-height:44px}

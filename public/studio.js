@@ -94,7 +94,20 @@ function previewArt(){
   el('calendarArt').alt=selected;
 }
 el('calBg').addEventListener('change',previewArt);
-el('animationMode').onclick=browseAnimations;
+el('animationMode').onclick=()=>{
+  clearChoices();
+  el('animationMode').setAttribute('aria-expanded','true');
+  el('animationResults').hidden=false;
+  el('animationFeedback').textContent='';
+  el('saveAnimation').hidden=true;
+  const query=el('animationQuery');
+  query.value=current.doors[activeDay-1].category;
+  query.focus();query.select();
+};
+el('searchAnimations').onclick=browseAnimations;
+el('animationQuery').onkeydown=event=>{
+  if(event.key==='Enter'&&!event.isComposing){event.preventDefault();browseAnimations()}
+};
 el('cancelAnimation').onclick=()=>{clearChoices();el('animationMode').focus()};
 for(const [id,step] of [['prevDay',-1],['nextDay',1]]){
   el(id).onclick=()=>{el('editDay').value=String(activeDay+step);door()};
@@ -231,7 +244,7 @@ el('recipientForm').onsubmit=e=>{e.preventDefault();work(async()=>{
   status.textContent='Calendar saved. Your private invitation is ready.';
 })};
 el('editDay').onchange=door;
-let options=[],selectedOption=null;
+let options=[],selectedOption=null,resultsTopic='';
 function clearChoices(){
   options=[];selectedOption=null;
   el('savedView').hidden=false;
@@ -243,16 +256,24 @@ function clearChoices(){
   el('saveAnimation').disabled=true;
 }
 function browseAnimations(){
-  const topic=current.doors[activeDay-1].category;
+  const topic=el('animationQuery').value.trim();
   clearChoices();
+  el('animationResults').hidden=false;
+  el('animationMode').setAttribute('aria-expanded','true');
+  el('saveAnimation').hidden=true;
+  if(!topic){el('animationFeedback').textContent='Enter a topic to search.';el('animationQuery').focus();return}
+  el('animationFeedback').textContent='Searching…';
   work(async()=>{
     status.textContent='Finding animations…';
     const door=current.doors[activeDay-1];
-    const result=await api(current.id,post({browse:true,category:topic,style:door.style,version:current.version}),activeDay);
+    let result;
+    try{result=await api(current.id,post({browse:true,category:topic,style:door.style,version:current.version}),activeDay)}
+    catch(error){el('animationFeedback').textContent=error.message;status.textContent='';return}
+    resultsTopic=topic;
     options=result.options;
     el('animationMode').setAttribute('aria-expanded','true');
     el('animationResults').hidden=false;
-    el('animationFeedback').textContent=options.length?'Choose an animation from the results.':'No other animations were found for this window.';
+    el('animationFeedback').textContent=options.length?'Choose an animation for “'+topic+'”.':'No matches for “'+topic+'”. Try another topic.';
     el('saveAnimation').hidden=!options.length;
     el('animationChoices').replaceChildren(...options.map((option,index)=>{
       const label=document.createElement('label');
@@ -277,7 +298,7 @@ function browseAnimations(){
 function saveWindow(selection){
   return work(async()=>{
     const door=current.doors[activeDay-1];
-    const category=door.category;
+    const category=selection?resultsTopic:door.category;
     const data={note:selection?door.note:el('dayNote').value,category,style:door.style,background:door.background,selection,version:current.version};
     const pendingCalendar=calendarChanged()?values(calendarFields):null;
     const saved=await api(current.id,post(data),activeDay);
