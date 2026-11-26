@@ -73,7 +73,11 @@ function parseInterests(input){
 function previewArt(){
   const selected=el('calBg').value;
   if(!selected)return;
-  el('calendarArt').src='/'+themeImage(selected)+'.webp';
+  const theme=themeImage(selected);
+  const imageUrl='/'+theme+'.webp';
+  street.style.setProperty('--street','url('+imageUrl+')');
+  street.dataset.theme=theme;
+  el('calendarArt').src=imageUrl;
   el('calendarArt').alt=selected;
   const dayBg=el('doorBg').value||selected;
   el('doorArt').src='/'+themeImage(dayBg)+'.webp';el('doorArt').alt=dayBg;
