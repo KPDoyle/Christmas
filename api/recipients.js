@@ -121,11 +121,15 @@ export default async function handler(req,res){
     }else{
       const email=String(input.email||'').trim();
       if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254)throw bad('Enter a valid email.');
-      const interests=categories(input.interests),style=requireChoice(input.style,styles),background=requireChoice(input.background,backgrounds);
+      const interests=(input.interests==null || (Array.isArray(input.interests)&&!input.interests.length))?[]:categories(input.interests),style=requireChoice(input.style,styles),background=requireChoice(input.background,backgrounds);
       const indexes=[];
       const doors=Array.from({length:25},(_,i)=>{
-        const old=c?.doors[i],category=interests[i%interests.length];
-        if(old&&(old.custom||(old.category===category&&old.style===style)))return old;
+        const old=c?.doors[i],category=interests.length?interests[i%interests.length]:'Christmas';
+        if(!interests.length && !old?.custom){
+          const scene=backgrounds[i%backgrounds.length];
+          return {category,style,background:'',note:old?.note||'',custom:false,media:{id:'scene:'+scene,scene,title:scene,matchType:'festive'}};
+        }
+        if(old&&(old.custom||(c.interests?.length&&old.category===category&&old.style===style)))return old;
         indexes.push(i);return {category,style,background:'',note:old?.note||'',custom:false};
       });
       await populate(doors,indexes);

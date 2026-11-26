@@ -61,7 +61,7 @@ function display(c){
   current=c;el('recipientEmail').value=c?.email||'';el('categories').value=formatInterests(c?.interests||[]);
   el('calStyle').selectedIndex=0;el('calBg').selectedIndex=0;
   el('delivery').hidden=!c;el('library').value=c?.id||'';
-  el('build').textContent=c?'Save calendar changes':'Find content and create calendar';
+  el('build').textContent=c?'Save calendar changes':'Create calendar';
   if(!c){previewArt();return;}
   el('calStyle').value=c.style;el('calBg').value=c.background;
   el('matchGrid').replaceChildren(...c.doors.map((d,i)=>{

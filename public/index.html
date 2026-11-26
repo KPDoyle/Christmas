@@ -4,7 +4,7 @@
 <button hidden type="button" id="deleteCalendar">Delete selected calendar</button><form id="lookup"><label>Or paste an invitation link <input type="url" id="lookupUrl" required></label><button>Open calendar</button></form>
 <form id="recipientForm"><fieldset><legend>Recipient and interests</legend>
 <label>Recipient email<input type="email" id="recipientEmail" required autocomplete="off"></label>
-<label>Interests<textarea id="categories" rows="2" required placeholder="Minions and Christmas, horses, dogs and snow"></textarea><small>Separate searches with commas. Use “and” to prioritise matches for both interests. Up to 8 searches.</small></label>
+<label>Interests<textarea id="categories" rows="2" placeholder="Minions and Christmas, horses, dogs and snow"></textarea><small>Leave blank for Christmas pictures, or separate searches with commas. Use “and” to prioritise matches for both interests. Up to 8 searches.</small></label>
 <label>Content style<select id="calStyle"></select></label><label>Background style<select id="calBg"></select><img class="artSample" id="calendarArt" alt=""></label>
 <details class="personalise"><summary>Personalise the gift</summary><label>Recipient’s first name<input id="recipientName" maxlength="60"></label><label>Your name<input id="senderName" maxlength="60"></label><label>Opening message<textarea id="dedication" maxlength="400" rows="3" placeholder="I chose these little surprises because…"></textarea></label></details><button id="build">Find content and create calendar</button></fieldset></form>
 <div id="delivery" hidden><label>Private invitation<input id="inviteUrl" readonly></label><button id="copyInvite">Copy invitation</button> <a id="mailInvite">Email invitation</a> · <a id="previewInvite" >Preview calendar</a>

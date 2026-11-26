@@ -1,3 +1,4 @@
+import { backgrounds } from '../lib/backgrounds.js';
 import { get, list, put } from '@vercel/blob';
 import { gifs } from '../lib/gifs.js';
 import { findGifs, chooseDoorMedia } from '../lib/discovery.js';
@@ -46,7 +47,7 @@ export default async function handler(req, res) {
   if (!req.query.day && req.method === 'GET') {
     if (!admin) return res.json({unlocked, preview});
     const { blobs } = await list({prefix});
-    return res.json({unlocked, guest, previewKey, topic:await selectedTopic(), topics:Object.entries(collections).map(([id,c])=>({id,name:c.name})), filled:blobs.map(b=>Number(b.pathname.slice(prefix.length,-4)))});
+    return res.json({unlocked, guest, previewKey, topic:'festive', topics:[{id:'festive',name:'Christmas pictures'},...Object.entries(collections).map(([id,c])=>({id,name:c.name}))], filled:blobs.map(b=>Number(b.pathname.slice(prefix.length,-4)))});
   }
   const day = Number(req.query.day);
   if (!Number.isInteger(day) || day<1 || day>25) return res.status(400).send('Invalid day');
@@ -62,6 +63,10 @@ export default async function handler(req, res) {
   if (!admin && !preview && token !== guest) return res.status(403).send('Open your invitation link to see the photos.');
   if(req.query.card==='1'){
     const requested=req.query.topic;
+    if(requested==='festive'){
+      const scene=backgrounds[(day-1)%backgrounds.length];
+      return res.json({topic:'Christmas',media:{id:'scene:'+scene,scene,title:scene}});
+    }
     if(/^custom-[a-f0-9]{32}$/.test(requested)){
       const saved=await get('topics/'+requested+'.json',{access:'private',useCache:false});
       if(saved?.statusCode!==200)return res.status(404).send('Topic unavailable');
