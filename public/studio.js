@@ -30,6 +30,7 @@ function door(){
   el('miniPreview').replaceChildren(image);
 }
 function display(c){
+  el('deleteCalendar').hidden=!c;
   current=c;el('recipientEmail').value=c?.email||'';el('categories').value=c?.interests.join(', ')||'';
   el('calStyle').selectedIndex=0;el('calBg').selectedIndex=0;
   el('delivery').hidden=!c;el('library').value=c?.id||'';
@@ -51,7 +52,20 @@ async function work(action){
 async function open(id){
   const c=id?await api(id):null;el('editDay').value='1';display(c);status.textContent='';
 }
-el('library').onchange=e=>work(()=>open(e.target.value));
+el('library').onchange=e=>work(async()=>{
+  try{await open(e.target.value)}catch(error){display(null);throw error}
+});
+el('deleteCalendar').onclick=()=>{
+  const selected=current;
+  if(!selected||busy)return;
+  if(!confirm('Delete the calendar for '+selected.email+' ('+selected.id.slice(-6)+') and its uploaded photos? Both shared links will stop working.'))return;
+  work(async()=>{
+    await api(selected.id,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({version:selected.version})});
+    Array.from(el('library').options).find(option=>option.value===selected.id)?.remove();
+    display(null);el('lookupUrl').value='';el('recipientEmail').focus();
+    status.textContent='Calendar deleted for '+selected.email+'.';
+  });
+};
 el('lookup').onsubmit=e=>{e.preventDefault();work(async()=>{
   const u=new URL(el('lookupUrl').value);const id=new URLSearchParams(u.hash.slice(1)).get('calendar')?.split('.')[0];
   if(!id||!/^[a-f0-9]{32}$/.test(id))throw Error('Paste a recipient invitation created in this studio.');

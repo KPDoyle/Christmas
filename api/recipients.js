@@ -1,4 +1,4 @@
-import {get,put,list} from '@vercel/blob';
+import {get,put,list,del} from '@vercel/blob';
 import {randomBytes,createHmac} from 'node:crypto';
 import {findGifs} from '../lib/discovery.js';
 
@@ -64,6 +64,16 @@ export default async function handler(req,res){
       return res.json({calendars,styles,backgrounds});
     }
     const c=id?await read(pathFor(id)):null;
+    if(req.method==='DELETE'){
+      if(!admin)return res.status(403).end();
+      if(!validId||req.query.day)throw bad('Select a saved calendar.');
+      if(!c)return res.json({deleted:true});
+      if(c.version!==req.body?.version)return res.status(409).send('Calendar changed. Reopen it before deleting.');
+      const photos=await list({prefix:'recipient-photos/'+id+'/',limit:100});
+      if(photos.blobs.length)await del(photos.blobs.map(photo=>photo.url));
+      await del(pathFor(id));
+      return res.json({deleted:true});
+    }
     if(id&&!c)return res.status(404).send('Calendar not found.');
     const day=Number(req.query.day);
     if(req.query.day&&(!Number.isInteger(day)||day<1||day>25))throw bad('Invalid door.');
