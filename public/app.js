@@ -84,7 +84,7 @@ function showGift(){
     el('sampleTheme').onchange=e=>{location.hash='sample='+e.target.value;location.reload()};
     el('shareSample').onclick=async()=>{
       const url=shareOrigin+'/#sample='+sampleTheme;
-      try{if(navigator.share)await navigator.share({title:'December Post',url});else{await navigator.clipboard.writeText(url);el('shareSample').textContent='Sample link copied'}}
+      try{if(navigator.share)await navigator.share({title:'Calendar Post',url});else{await navigator.clipboard.writeText(url);el('shareSample').textContent='Sample link copied'}}
       catch(e){if(e.name!=='AbortError')prompt('Copy sample link',url)}
     };
     title.textContent='Christmas, made for you.';
