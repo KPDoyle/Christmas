@@ -56,6 +56,7 @@ function restoreProgress(){
   for(const n of readProgress().days||[])opened.add(n);
 }
 function saveProgress(){
+  if(role==='admin')return;
   const latest=readProgress();
   for(const n of latest.days||[])opened.add(n);
   try{localStorage.setItem(progressKey,JSON.stringify({days:[...opened]}))}catch{}
@@ -137,19 +138,27 @@ async function refresh(){
     b.onclick=()=>openDay(n);el('grid').append(b);
   }
 }
-let studioCalendarId='';
+let studioCalendarId='',studioPreviewKind='sample';
+function setStudioPreview(kind,id){
+  if(kind===studioPreviewKind && id===studioCalendarId)return;
+  studioPreviewKind=kind;studioCalendarId=id;opened.clear();
+  for(const button of el('grid').children){
+    button.classList.remove('opened');
+    button.setAttribute('aria-label',Number(button.textContent.replace('✓',''))+' December');
+  }
+}
 async function openDay(n){
   const selectedId=role==='admin'?studioCalendarId:'';
   const doorEndpoint=selectedId?'/api/recipients':endpoint;
   const current=++request;day=n;el('uploadFilename').textContent='';el('postNote').hidden=true;
   el('card').hidden=true;el('media').replaceChildren();
   if(objectUrl) URL.revokeObjectURL(objectUrl);
-  el('date').textContent=n+' December';el('photo').hidden=true;el('upload').hidden=!!selectedId||!state.guest;
+  el('date').textContent=n+' December';el('photo').hidden=true;el('upload').hidden=role==='admin'||!state.guest;
   el('upload').querySelector('input').value='';
   if(!el('popup').open)el('popup').showModal();
   el('notice').textContent='Opening your door…';
-  if(demo||(role==='admin'&&!state.guest&&!selectedId)){
-    const [scene,note]=demo?(samples[n-1]||[sampleScenes[(n-4)%sampleScenes.length],'']):[sampleScenes[(n-1)%sampleScenes.length],''];
+  if(demo||(role==='admin'&&!selectedId)){
+    const [scene,note]=(demo||studioPreviewKind==='sample'&&role==='admin')?(samples[n-1]||[sampleScenes[(n-4)%sampleScenes.length],'']):[sampleScenes[(n-1)%sampleScenes.length],''];
     const img=new Image();img.src='/'+themeImage(scene)+'.webp';img.alt=scene;
     el('media').replaceChildren(img);
     el('postNote').textContent=note;el('postNote').hidden=false;el('card').hidden=false;el('notice').textContent='';
@@ -241,7 +250,7 @@ async function startCalendar(){
     };
     window.addEventListener('pageshow',event=>{if(event.persisted)location.reload()});
   }
-  restoreProgress();
+  if(role!=='admin')restoreProgress();
   await refresh();
 }
 startCalendar().catch(e=>{el('hint').hidden=false;el('hint').textContent=e.message});

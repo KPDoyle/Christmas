@@ -26,6 +26,16 @@ fetch('/api/owner?action=status',{credentials:'same-origin'}).then(r=>r.ok?r.jso
   if(warn)studio.prepend(note);else el('accountSettings').append(note);
 }).catch(()=>{});
 let current=null,busy=false,activeDay=1;
+let creatingCalendar=false;
+function updatePreviewContext(){
+  const drafting=!current && (creatingCalendar || (calendarBaseline && calendarChanged()));
+  const kind=current?'saved':drafting?'draft':'sample';
+  setStudioPreview(kind,current?.id||'');
+  el('studioPreviewTitle').textContent=current?'Calendar preview · '+current.email:
+    drafting?'New calendar preview':'Sample calendar preview';
+}
+el('recipientForm').addEventListener('input',updatePreviewContext);
+el('recipientForm').addEventListener('change',updatePreviewContext);
 let activeSection='recipientForm';
 const sectionButtons=Array.from(el('studioSections').querySelectorAll('button'));
 function showSection(id){
@@ -185,7 +195,6 @@ function display(c){
     photoRequest++;showPhoto(null);doorPhotos.clear();
     document.querySelectorAll('.street .door').forEach(tile=>tile.style.removeProperty('--uploaded-photo'));
   }
-  studioCalendarId=c?.id||'';
   const backgroundsMenu=el('calBg');
   backgroundsMenu.querySelector('option[data-legacy]')?.remove();
   if(c && !Array.from(backgroundsMenu.options).some(o=>o.value===c.background)){
@@ -203,8 +212,9 @@ function display(c){
   showSection(c?activeSection:'recipientForm');
   el('delivery').hidden=!c;el('library').value=c?.id||'';
   el('build').textContent=c?'Save calendar changes':'Create calendar';
-  if(!c){calendarBaseline=JSON.stringify(values(calendarFields));previewArt();return;}
+  if(!c){calendarBaseline=JSON.stringify(values(calendarFields));updatePreviewContext();previewArt();return;}
   el('calBg').value=c.background;
+  updatePreviewContext();
   calendarBaseline=JSON.stringify(values(calendarFields));
   el('matchGrid').replaceChildren(...c.doors.map((d,i)=>{
     const tile=document.createElement('button');tile.type='button';tile.className='matchTile';
@@ -233,7 +243,7 @@ async function work(action){
 }
 async function open(id){
   if(hasEdits()&&!confirm('Discard your unsaved edits and open another calendar?')){el('library').value=current?.id||'';return}
-  const c=id?await api(id):null;drafts.clear();el('editDay').value='1';activeSection='recipientForm';display(c);status.textContent='';
+  const c=id?await api(id):null;creatingCalendar=!id;drafts.clear();el('editDay').value='1';activeSection='recipientForm';display(c);status.textContent='';
 }
 el('library').onchange=e=>work(async()=>{
   try{await open(e.target.value)}catch(error){el('library').value=current?.id||'';throw error}
@@ -245,7 +255,7 @@ el('deleteCalendar').onclick=()=>{
   work(async()=>{
     await api(selected.id,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({version:selected.version})});
     Array.from(el('library').options).find(option=>option.value===selected.id)?.remove();
-    display(null);el('recipientEmail').focus();
+    creatingCalendar=false;display(null);el('recipientEmail').focus();
     status.textContent='Calendar deleted for '+selected.email+'.';
   });
 };
