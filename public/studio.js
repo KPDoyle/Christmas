@@ -121,7 +121,21 @@ function door(){
   const image=new Image();image.alt=d.category;image.src=mediaUrl(d.media);
   el('miniPreview').replaceChildren(image);
 }
+const doorPhotos=new Map();
+function updatePhotoTile(day,src){
+  doorPhotos.set(day,src);
+  for(const tile of [el('door-'+day),el('matchGrid').children[day-1]]){
+    if(!tile)continue;
+    if(tile.classList.contains('matchTile'))tile.querySelector('img').src=src;
+    else tile.style.setProperty('--uploaded-photo','url("'+src+'")');
+  }
+}
 function display(c){
+  if(studioCalendarId!==(c?.id||'')){
+    photoRequest++;clearPhoto();doorPhotos.clear();
+    document.querySelectorAll('.street .door').forEach(tile=>tile.style.removeProperty('--uploaded-photo'));
+  }
+  studioCalendarId=c?.id||'';
   const backgroundsMenu=el('calBg');
   backgroundsMenu.querySelector('option[data-legacy]')?.remove();
   if(c && !Array.from(backgroundsMenu.options).some(o=>o.value===c.background)){
@@ -149,6 +163,7 @@ function display(c){
     tile.onclick=()=>{el('editDay').value=String(i+1);door();el('doorInterest').focus()};
     return tile;
   }));
+  for(const [day,src] of doorPhotos)updatePhotoTile(day,src);
   const url=shareOrigin+'/#calendar='+c.invite;
   el('inviteUrl').value=url;el('previewInvite').href='/#calendar='+c.test+'&preview=1';
   el('previewInvite').target='_blank';el('previewInvite').rel='noopener';
@@ -205,6 +220,9 @@ el('recipientPhoto').onchange=e=>{const file=e.target.files[0];if(!file)return;+
     const cv=document.createElement('canvas');cv.width=Math.max(1,Math.round(img.width*scale));cv.height=Math.max(1,Math.round(img.height*scale));
     cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
     await api(current.id,post({photo:cv.toDataURL('image/jpeg',.83).split(',')[1]}),el('editDay').value);clearPhoto();el('savedPhotoPreview').src=cv.toDataURL('image/jpeg',.83);el('savedPhotoPreview').hidden=false;
+    const thumb=document.createElement('canvas');thumb.width=160;thumb.height=Math.max(1,Math.round(160*cv.height/cv.width));if(thumb.height>160){thumb.width=Math.max(1,Math.round(160*cv.width/cv.height));thumb.height=160}
+    thumb.getContext('2d').drawImage(cv,0,0,thumb.width,thumb.height);
+    updatePhotoTile(activeDay,thumb.toDataURL('image/jpeg',.8));
     el('recipientFilename').textContent='Saved: '+file.name;status.textContent='Photo saved to this recipient’s window.';
   }catch(error){el('recipientFilename').textContent='Upload failed. Choose the photo again to retry.';throw error}finally{URL.revokeObjectURL(src);el('recipientPhoto').value=''}
 })};

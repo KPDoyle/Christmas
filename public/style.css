@@ -63,3 +63,5 @@ header nav{display:flex;align-items:center;gap:16px}
 .street.paused,.street.paused *,.street.paused ::before,.street.paused ::after{animation-play-state:paused!important}
 #inviteHeading{font:normal 28px/1.2 Georgia,serif;color:#ffe2ac;scroll-margin:20px}
 @media(prefers-reduced-motion:reduce){#pauseScene{display:none}}
+
+.street .door[style*="--uploaded-photo"]{background:linear-gradient(#0002,#0007),var(--uploaded-photo) center/cover;color:white;text-shadow:0 1px 4px #000}

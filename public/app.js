@@ -140,15 +140,18 @@ async function refresh(){
     b.onclick=()=>openDay(n);el('grid').append(b);
   }
 }
+let studioCalendarId='';
 async function openDay(n){
+  const selectedId=role==='admin'?studioCalendarId:'';
+  const doorEndpoint=selectedId?'/api/recipients':endpoint;
   const current=++request;day=n;el('uploadFilename').textContent='';el('postNote').hidden=true;
   el('card').hidden=true;el('media').replaceChildren();
   if(objectUrl) URL.revokeObjectURL(objectUrl);
-  el('date').textContent=n+' December';el('photo').hidden=true;el('upload').hidden=!state.guest;
+  el('date').textContent=n+' December';el('photo').hidden=true;el('upload').hidden=!!selectedId||!state.guest;
   el('upload').querySelector('input').value='';
   if(!el('popup').open)el('popup').showModal();
   el('notice').textContent='Opening your door…';
-  if(demo||(role==='admin'&&!state.guest)){
+  if(demo||(role==='admin'&&!state.guest&&!selectedId)){
     const [scene,note]=demo?(samples[n-1]||[sampleScenes[(n-4)%sampleScenes.length],'']):[sampleScenes[(n-1)%sampleScenes.length],''];
     const img=new Image();img.src='/'+themeImage(scene)+'.webp';img.alt=scene;
     el('series').textContent=scene;el('media').replaceChildren(img);
@@ -157,7 +160,8 @@ async function openDay(n){
   }
   try{
     const query=new URLSearchParams({card:'1',day:n,topic:chosenTopic});
-    const cardResponse=await fetch(endpoint+'?'+query,{headers});
+    if(selectedId)query.set('id',selectedId);
+    const cardResponse=await fetch(doorEndpoint+'?'+query,{headers});
     if(current!==request)return;
     if(!cardResponse.ok){
       el('notice').textContent=cardResponse.status===423?'This door opens on '+n+' December.':cardResponse.status===403?'Use the guest link from your sender to open this door.':'This postcard could not load. Please reopen the door.';
@@ -169,7 +173,11 @@ async function openDay(n){
     el('postNote').textContent=card.note||'';el('postNote').hidden=!card.note;
     if(card.background)el('card').style.setProperty('--postcard-art','url(/'+themeImage(card.background)+'.webp)');
     el('series').textContent=card.topic;
-    if(card.media){
+    const photoQuery=new URLSearchParams({day:n});
+    if(selectedId)photoQuery.set('id',selectedId);
+    const r=await fetch(doorEndpoint+'?'+photoQuery,{headers,cache:'no-store'});
+    if(current!==request)return;
+    if(!r.ok && card.media){
       const animation=new Image();
       animation.alt=card.media.title||card.topic;
       animation.onerror=()=>animation.replaceWith('This animation is temporarily unavailable.');
@@ -178,7 +186,7 @@ async function openDay(n){
     }
     el('card').hidden=false;
     el('notice').textContent='';
-    const r=await fetch(endpoint+'?day='+n,{headers});
+
     if(current!==request)return;
     if(!r.ok){el('notice').textContent=r.status===404?'':r.status===423?'This door opens on '+n+' December.':r.status===403?'Open the invitation link from your sender to view the photo.':'Could not load this photo. Please try again.';return}
     const blob=await r.blob();if(current!==request)return;
