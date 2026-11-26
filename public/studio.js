@@ -84,11 +84,36 @@ function previewArt(){
 }
 el('calBg').addEventListener('change',previewArt);
 el('doorBg').addEventListener('change',previewArt);
+let photoRequest=0, savedPhotoUrl='';
+function clearPhoto(){
+  if(savedPhotoUrl)URL.revokeObjectURL(savedPhotoUrl);
+  savedPhotoUrl='';
+  el('savedPhotoPreview').hidden=true;
+  el('savedPhotoPreview').removeAttribute('src');
+}
+async function loadPhoto(id,day){
+  const request=++photoRequest;
+  clearPhoto();
+  const caption=el('recipientFilename');
+  caption.textContent='Checking for a saved photo…';
+  try{
+    const response=await fetch('/api/recipients?id='+encodeURIComponent(id)+'&day='+day,{headers,cache:'no-store'});
+    if(request!==photoRequest)return;
+    if(response.status===404){caption.textContent='No photo added yet.';return}
+    if(!response.ok)throw Error();
+    const blob=await response.blob();
+    if(request!==photoRequest)return;
+    savedPhotoUrl=URL.createObjectURL(blob);
+    el('savedPhotoPreview').src=savedPhotoUrl;el('savedPhotoPreview').hidden=false;
+    caption.textContent='Saved photo for window '+day;
+  }catch{if(request===photoRequest)caption.textContent='Saved photo preview unavailable.'}
+}
 function door(){
   el('recipientFilename').textContent='';
   if(!current)return;
   activeDay=Number(el('editDay').value);
   const d=current.doors[activeDay-1];
+  loadPhoto(current.id,activeDay);
   el('dayNote').value=d.note||'';
   el('doorInterest').value=d.category;el('doorStyle').value=d.style;el('doorBg').value=d.background||'';
   if(drafts.has(activeDay))applyValues(windowFields,drafts.get(activeDay));
@@ -174,13 +199,14 @@ el('doorForm').onsubmit=e=>{e.preventDefault();work(async()=>{
  status.textContent=data.replace?'New animation saved to this window.':'Window saved to the existing invitation.';
 })};
 el('copyInvite').onclick=async()=>{try{await navigator.clipboard.writeText(el('inviteUrl').value);status.textContent='Invitation copied.'}catch{el('inviteUrl').select();status.textContent='Copy the selected invitation.'}};
-el('recipientPhoto').onchange=e=>{const file=e.target.files[0];if(!file)return;el('recipientFilename').textContent=file.name;work(async()=>{
+el('recipientPhoto').onchange=e=>{const file=e.target.files[0];if(!file)return;++photoRequest;el('recipientFilename').textContent='Uploading '+file.name+'…';work(async()=>{
   const src=URL.createObjectURL(file);
   try{const img=new Image();img.src=src;await img.decode();const scale=Math.min(1,1600/Math.max(img.width,img.height));
     const cv=document.createElement('canvas');cv.width=Math.max(1,Math.round(img.width*scale));cv.height=Math.max(1,Math.round(img.height*scale));
     cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
-    await api(current.id,post({photo:cv.toDataURL('image/jpeg',.83).split(',')[1]}),el('editDay').value);status.textContent='Photo saved to this recipient’s window.';
-  }finally{URL.revokeObjectURL(src);el('recipientPhoto').value=''}
+    await api(current.id,post({photo:cv.toDataURL('image/jpeg',.83).split(',')[1]}),el('editDay').value);clearPhoto();el('savedPhotoPreview').src=cv.toDataURL('image/jpeg',.83);el('savedPhotoPreview').hidden=false;
+    el('recipientFilename').textContent='Saved: '+file.name;status.textContent='Photo saved to this recipient’s window.';
+  }catch(error){el('recipientFilename').textContent='Upload failed. Choose the photo again to retry.';throw error}finally{URL.revokeObjectURL(src);el('recipientPhoto').value=''}
 })};
 api().then(async data=>{
   studio.hidden=false;
