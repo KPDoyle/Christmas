@@ -7,6 +7,19 @@ document.addEventListener('click',event=>{
   }
 },true);
 const studio=el('studio'),status=el('studioStatus');
+// Owner account / Microsoft 365 sender notice for admins.
+fetch('/api/owner?action=status',{credentials:'same-origin'}).then(r=>r.ok?r.json():null).then(s=>{
+  if(!s)return;
+  const note=document.createElement('p');note.id='ownerNotice';note.setAttribute('role','status');
+  const link=(text)=>{const a=document.createElement('a');a.href='/owner.html';a.textContent=text;return a};
+  let warn=false;
+  if(params.get('admin')==='session'&&!s.loggedIn){note.append('Your owner session has ended. ',link('Sign in again'));warn=true}
+  else if(s.setupRequired){note.append('No owner login yet. ',link('Set your owner password'));warn=true}
+  else if(s.loggedIn&&!s.sender?.connected){note.append('Password-reset emails cannot be sent: the Microsoft 365 sender is not connected. ',link('Connect it in owner settings'));warn=true}
+  else note.append(link(s.loggedIn?'Owner settings':'Owner sign-in'));
+  if(warn)note.style.cssText='background:#fff3cd;color:#5a4300;border:1px solid #c79100;padding:.6rem;border-radius:.3rem';
+  studio.prepend(note);
+}).catch(()=>{});
 let current=null,busy=false;
 const opts=(select,values)=>select.replaceChildren(...values.map(v=>new Option(v,v)));
 async function api(id,options={},day){

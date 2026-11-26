@@ -1,0 +1,35 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0c203b"><meta name="referrer" content="no-referrer"><meta name="robots" content="noindex"><title>Owner sign-in · December Post</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/edition.css">
+<style>
+.owner{max-width:30rem;margin:2rem auto;padding:1.5rem;background:rgba(255,255,255,.94);color:#0c203b;border-radius:.6rem;box-shadow:0 .4rem 1.6rem rgba(0,0,0,.25)}
+.owner h1{font-size:1.6rem;margin:0 0 1rem}.owner h2{font-size:1.15rem;margin:1.4rem 0 .5rem}
+.owner form{display:grid;gap:.6rem;margin:0 0 1rem}.owner label{display:grid;gap:.25rem}
+.owner input{padding:.55rem;font:inherit;border:1px solid #8a97a8;border-radius:.3rem}
+.owner button,.owner .button{padding:.55rem .9rem;font:inherit;cursor:pointer;border-radius:.3rem;border:1px solid #0c203b;background:#0c203b;color:#fff;text-decoration:none;display:inline-block;text-align:center}
+.owner .secondary{background:#fff;color:#0c203b}.owner .linkish{background:none;border:0;color:#0c203b;text-decoration:underline;padding:0}
+.owner .warning{background:#fff3cd;border:1px solid #c79100;padding:.75rem;border-radius:.3rem}
+.owner .ok{background:#e3f4e8;border:1px solid #2e7d4f;padding:.75rem;border-radius:.3rem}
+.owner [role=status]{min-height:1.2em}.owner small{color:#4a5668}
+</style>
+<body><header><strong>✴ &nbsp; December Post</strong><nav><span>Owner</span></nav></header>
+<main><section class="owner">
+<h1 id="title">Owner sign-in</h1>
+<p id="message" role="status"></p>
+
+<form id="loginForm" hidden><label>Email<input type="email" id="loginEmail" autocomplete="username" required></label><label>Password<input type="password" id="loginPassword" autocomplete="current-password" required></label><button>Sign in</button><button type="button" class="linkish" id="showForgot">Forgotten your password?</button></form>
+
+<form id="forgotForm" hidden><p>Enter the owner email address and we’ll send a reset link.</p><label>Email<input type="email" id="forgotEmail" autocomplete="username" required></label><button>Send reset link</button><button type="button" class="linkish" id="backToLogin">Back to sign-in</button></form>
+
+<form id="resetForm" hidden><p>Choose a new password of at least 12 characters.</p><label>New password<input type="password" id="resetPassword" autocomplete="new-password" minlength="12" required></label><label>Repeat new password<input type="password" id="resetConfirm" autocomplete="new-password" minlength="12" required></label><button>Set new password</button></form>
+
+<form id="setupForm" hidden><p>Set the owner password for the first time. You need the calendar admin key (CALENDAR_KEY).</p><label>Calendar admin key<input type="password" id="setupKey" autocomplete="off" required></label><label>New password<input type="password" id="setupPassword" autocomplete="new-password" minlength="12" required></label><label>Repeat new password<input type="password" id="setupConfirm" autocomplete="new-password" minlength="12" required></label><button>Create owner account</button></form>
+
+<div id="dashboard" hidden>
+<p>Signed in as <strong id="ownerEmail"></strong>.</p>
+<p><a class="button" href="/#admin=session">Open calendar admin</a> <button type="button" class="secondary" id="logout">Sign out</button></p>
+<h2>Microsoft 365 sender</h2>
+<div id="senderBox"></div>
+<p><a class="button" id="connectSender" href="/api/owner?action=ms-connect">Connect Microsoft 365 sender</a> <button type="button" class="secondary" id="testSender" hidden>Send test email</button> <button type="button" class="linkish" id="disconnectSender" hidden>Disconnect</button></p>
+<h2>Change password</h2>
+<form id="changeForm"><label>Current password<input type="password" id="currentPassword" autocomplete="current-password" required></label><label>New password<input type="password" id="newPassword" autocomplete="new-password" minlength="12" required></label><button>Change password</button></form>
+</div>
+</section></main><footer>✴ &nbsp; December Post</footer><script src="/owner.js"></script></body></html>

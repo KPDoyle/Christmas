@@ -4,6 +4,7 @@ import {findGifs,chooseDoorMedia} from '../lib/discovery.js';
 
 const styles=['Traditional','Humorous','Heartwarming','Playful','Scenic'];
 import {backgrounds} from '../lib/backgrounds.js';
+import {isAdmin} from '../lib/owner/session.js';
 const prefix='recipient-calendars/';
 const pathFor=id=>prefix+id+'.json';
 const signature=(id,role)=>createHmac('sha256',process.env.CALENDAR_KEY).update(role+'/'+id).digest('base64url');
@@ -50,7 +51,7 @@ export default async function handler(req,res){
   res.setHeader('Cache-Control','private, no-store');
   if(!process.env.CALENDAR_KEY)return res.status(503).end();
   const auth=req.headers.authorization?.replace(/^Bearer /,'')||'';
-  const admin=auth===process.env.CALENDAR_KEY;
+  const admin=await isAdmin(req,auth);
   const [linkId,sig]=auth.split('.');
   const id=admin?req.query.id:linkId;
   const validId=typeof id==='string'&&/^[a-f0-9]{32}$/.test(id);

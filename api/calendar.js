@@ -4,6 +4,7 @@ import { gifs } from '../lib/gifs.js';
 import { findGifs, chooseDoorMedia } from '../lib/discovery.js';
 import { createHash, createHmac } from 'node:crypto';
 import { collections } from '../lib/postcards.js';
+import { isAdmin } from '../lib/owner/session.js';
 const settingsPath = 'settings/2026-topic.txt';
 async function selectedTopic() {
   const result = await get(settingsPath, {access:'private',useCache:false});
@@ -19,7 +20,7 @@ export default async function handler(req, res) {
   const guest = createHmac('sha256',key).update('guest').digest('base64url');
   const previewKey = createHmac('sha256',key).update('2026-preview').digest('base64url');
   const token = req.headers.authorization?.replace(/^Bearer /,'');
-  const admin = token === key;
+  const admin = await isAdmin(req, token);
   const preview = token === previewKey;
   const unlocked=25;
   if(req.method==='POST' && req.query.discover==='1'){
