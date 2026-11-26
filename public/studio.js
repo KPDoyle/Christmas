@@ -84,16 +84,10 @@ function previewArt(){
 }
 el('calBg').addEventListener('change',previewArt);
 el('doorBg').addEventListener('change',previewArt);
-let photoRequest=0, savedPhotoUrl='';
-function clearPhoto(){
-  if(savedPhotoUrl)URL.revokeObjectURL(savedPhotoUrl);
-  savedPhotoUrl='';
-  el('savedPhotoPreview').hidden=true;
-  el('savedPhotoPreview').removeAttribute('src');
-}
+let photoRequest=0;
 async function loadPhoto(id,day){
   const request=++photoRequest;
-  clearPhoto();
+  
   const caption=el('recipientFilename');
   caption.textContent='Checking for a saved photo…';
   try{
@@ -101,10 +95,6 @@ async function loadPhoto(id,day){
     if(request!==photoRequest)return;
     if(response.status===404){caption.textContent='No photo added yet.';return}
     if(!response.ok)throw Error();
-    const blob=await response.blob();
-    if(request!==photoRequest)return;
-    savedPhotoUrl=URL.createObjectURL(blob);
-    el('savedPhotoPreview').src=savedPhotoUrl;el('savedPhotoPreview').hidden=false;
     caption.textContent='Saved photo for window '+day;
   }catch{if(request===photoRequest)caption.textContent='Saved photo preview unavailable.'}
 }
@@ -118,8 +108,6 @@ function door(){
   el('doorInterest').value=d.category;el('doorStyle').value=d.style;el('doorBg').value=d.background||'';
   if(drafts.has(activeDay))applyValues(windowFields,drafts.get(activeDay));
   previewArt();
-  const image=new Image();image.alt=d.category;image.src=mediaUrl(d.media);
-  el('miniPreview').replaceChildren(image);
 }
 const doorPhotos=new Map();
 function updatePhotoTile(day,src){
@@ -132,7 +120,7 @@ function updatePhotoTile(day,src){
 }
 function display(c){
   if(studioCalendarId!==(c?.id||'')){
-    photoRequest++;clearPhoto();doorPhotos.clear();
+    photoRequest++;doorPhotos.clear();
     document.querySelectorAll('.street .door').forEach(tile=>tile.style.removeProperty('--uploaded-photo'));
   }
   studioCalendarId=c?.id||'';
@@ -219,11 +207,11 @@ el('recipientPhoto').onchange=e=>{const file=e.target.files[0];if(!file)return;+
   try{const img=new Image();img.src=src;await img.decode();const scale=Math.min(1,1600/Math.max(img.width,img.height));
     const cv=document.createElement('canvas');cv.width=Math.max(1,Math.round(img.width*scale));cv.height=Math.max(1,Math.round(img.height*scale));
     cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
-    await api(current.id,post({photo:cv.toDataURL('image/jpeg',.83).split(',')[1]}),el('editDay').value);clearPhoto();el('savedPhotoPreview').src=cv.toDataURL('image/jpeg',.83);el('savedPhotoPreview').hidden=false;
+    await api(current.id,post({photo:cv.toDataURL('image/jpeg',.83).split(',')[1]}),el('editDay').value);
     const thumb=document.createElement('canvas');thumb.width=160;thumb.height=Math.max(1,Math.round(160*cv.height/cv.width));if(thumb.height>160){thumb.width=Math.max(1,Math.round(160*cv.width/cv.height));thumb.height=160}
     thumb.getContext('2d').drawImage(cv,0,0,thumb.width,thumb.height);
     updatePhotoTile(activeDay,thumb.toDataURL('image/jpeg',.8));
-    el('recipientFilename').textContent='Saved: '+file.name;status.textContent='Photo saved to this recipient’s window.';
+    el('recipientFilename').textContent='Saved: '+file.name;status.textContent='';
   }catch(error){el('recipientFilename').textContent='Upload failed. Choose the photo again to retry.';throw error}finally{URL.revokeObjectURL(src);el('recipientPhoto').value=''}
 })};
 api().then(async data=>{
