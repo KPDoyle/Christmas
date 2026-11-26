@@ -22,7 +22,7 @@ fetch('/api/owner?action=status',{credentials:'same-origin'}).then(r=>r.ok?r.jso
 }).catch(()=>{});
 let current=null,busy=false,activeDay=1;
 const drafts=new Map();
-const windowFields=['dayNote','doorInterest','doorStyle','doorBg'];
+const windowFields=['dayNote'];
 const calendarFields=['recipientEmail','categories','calStyle','calBg','recipientName','senderName','dedication'];
 let calendarBaseline='';
 const values=fields=>fields.map(id=>el(id).value);
@@ -31,7 +31,7 @@ const calendarChanged=()=>JSON.stringify(values(calendarFields))!==calendarBasel
 function trackWindow(){
   if(!current)return;
   const d=current.doors[activeDay-1], data=values(windowFields);
-  if(JSON.stringify(data)===JSON.stringify([d.note||'',d.category,d.style,d.background||'']))drafts.delete(activeDay);
+  if(JSON.stringify(data)===JSON.stringify([d.note||'']))drafts.delete(activeDay);
   else drafts.set(activeDay,data);
   updateDraftStatus();
 }
@@ -79,11 +79,8 @@ function previewArt(){
   street.dataset.theme=theme;
   el('calendarArt').src=imageUrl;
   el('calendarArt').alt=selected;
-  const dayBg=el('doorBg').value||selected;
-  el('doorArt').src='/'+themeImage(dayBg)+'.webp';el('doorArt').alt=dayBg;
 }
 el('calBg').addEventListener('change',previewArt);
-el('doorBg').addEventListener('change',previewArt);
 let photoRequest=0;
 let previewUrl='';
 function showPhoto(blob){
@@ -118,7 +115,6 @@ function door(){
   const d=current.doors[activeDay-1];
   loadPhoto(current.id,activeDay);
   el('dayNote').value=d.note||'';
-  el('doorInterest').value=d.category;el('doorStyle').value=d.style;el('doorBg').value=d.background||'';
   if(drafts.has(activeDay))applyValues(windowFields,drafts.get(activeDay));
   previewArt();
 }
@@ -161,7 +157,7 @@ function display(c){
     tile.append(image,name);
     if(d.media.matchType){const label=document.createElement('small');label.textContent=({full:'Full interest match',related:'Related interest',festive:'Christmas artwork'})[d.media.matchType];tile.append(label)}
     if(d.media.matched?.length){const tags=document.createElement('small');tags.textContent='Matched: '+d.media.matched.join(', ');tile.append(tags)}
-    tile.onclick=()=>{el('editDay').value=String(i+1);door();el('doorInterest').focus()};
+    tile.onclick=()=>{el('editDay').value=String(i+1);door();el('dayNote').focus()};
     return tile;
   }));
   for(const [day,src] of doorPhotos)updatePhotoTile(day,src);
@@ -206,7 +202,8 @@ el('recipientForm').onsubmit=e=>{e.preventDefault();work(async()=>{
 })};
 el('editDay').onchange=door;
 el('doorForm').onsubmit=e=>{e.preventDefault();work(async()=>{
-  const data={note:el('dayNote').value,category:el('doorInterest').value,style:el('doorStyle').value,background:el('doorBg').value,replace:e.submitter?.id==='replaceGif',version:current.version};
+  const {category,style,background}=current.doors[activeDay-1];
+  const data={note:el('dayNote').value,category,style,background,replace:e.submitter?.id==='replaceGif',version:current.version};
   if(data.replace)status.textContent='Searching for a different animation…';
   const pendingCalendar=calendarChanged()?values(calendarFields):null;
   const saved=await api(current.id,post(data),activeDay);
@@ -229,11 +226,10 @@ el('recipientPhoto').onchange=e=>{const file=e.target.files[0];if(!file)return;+
 })};
 api().then(async data=>{
   studio.hidden=false;
-  opts(el('calStyle'),data.styles);opts(el('doorStyle'),data.styles);el('calBg').replaceChildren(...Object.entries(data.backgroundGroups).map(([label,scenes])=>{
+  opts(el('calStyle'),data.styles);el('calBg').replaceChildren(...Object.entries(data.backgroundGroups).map(([label,scenes])=>{
     const group=document.createElement('optgroup');group.label=label;
     group.append(...scenes.map(scene=>new Option(scene,scene)));return group;
-  }));opts(el('doorBg'),data.backgrounds);
-  el('doorBg').add(new Option('Use calendar background',''),0);
+  }));
   for(let i=1;i<=25;i++)el('editDay').add(new Option(i+' December',String(i)));
   for(const c of data.calendars)el('library').add(new Option(c.email+' · '+c.id.slice(-6),c.id));
   const edit=params.get('edit');
