@@ -150,7 +150,7 @@ async function refresh(){
   }
 }
 async function openDay(n){
-  const current=++request;day=n;el('postNote').hidden=true;
+  const current=++request;day=n;el('prevCard').disabled=n===1;el('nextCard').disabled=n===25;el('postNote').hidden=true;
   el('card').hidden=true;el('media').replaceChildren();
   if(objectUrl) URL.revokeObjectURL(objectUrl);
   el('date').textContent=n+' December';el('photo').hidden=true;el('upload').hidden=!state.guest;
@@ -195,6 +195,8 @@ async function openDay(n){
   }catch{if(current===request)el('notice').textContent='Connection lost. Please try again.'}
 }
 el('popup').addEventListener('close',()=>{request++;el('media').replaceChildren()});
+el('prevCard').onclick=()=>{if(day>1)openDay(day-1)};
+el('nextCard').onclick=()=>{if(day<25)openDay(day+1)};
 el('close').onclick=()=>el('popup').close();
 el('share').onclick=async()=>{
   const url=shareOrigin+'/#gift='+state.guest+'&topic='+encodeURIComponent(chosenTopic);
