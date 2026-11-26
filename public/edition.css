@@ -72,3 +72,20 @@ header:has(#adminHome:not([hidden])) nav{margin-left:auto}
 #candidatePreview{display:block;width:100%;height:190px;object-fit:contain;background:#10263b;margin:0 0 10px}
 #candidatePreview[hidden]{display:none}
 #saveAnimation:disabled{opacity:.55}
+
+#studio .studioHeading{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+#accountSettings p{margin:0;font-size:14px}
+#studioSections{display:flex;gap:4px;margin-top:18px;padding:4px;border:1px solid #708294;border-radius:8px;background:#10263b}
+#studioSections button{flex:1;background:transparent;color:#e1e9f1}
+#studioSections button[aria-current]{background:#f2d59b;color:#183047}
+#studio [hidden]{display:none!important}
+#studioStatus:empty{display:none}
+#studioStatus:not(:empty){padding:8px 12px;border-left:3px solid #d4b477;text-align:left}
+#studio #delivery{margin-top:12px}
+#doorForm #matches{margin-bottom:16px}
+#studio #manageCalendar{margin-top:20px;border-top:1px solid #52677a}
+#manageCalendar summary{cursor:pointer;width:fit-content}
+#shareSection{display:grid;gap:14px;padding:clamp(14px,2vw,24px);border:1px solid #708294;border-radius:8px}
+#shareSection h3{margin:0;color:#ffe2ac;font:400 28px var(--book)}
+#shareSection .inviteActions{margin:0}
+.sharePreview a{display:inline-flex;align-items:center;min-height:44px}

@@ -18,9 +18,21 @@ fetch('/api/owner?action=status',{credentials:'same-origin'}).then(r=>r.ok?r.jso
   else if(s.loggedIn&&s.sender&&!s.sender.connected){note.append('Password-reset emails cannot be sent: the Microsoft 365 sender is not connected. ',link('Connect it in owner settings'));warn=true}
   else note.append(link(s.loggedIn?'Owner settings':'Owner sign-in'));
   if(warn)note.style.cssText='background:#fff3cd;color:#5a4300;border:1px solid #c79100;padding:.6rem;border-radius:.3rem';
-  studio.prepend(note);
+  if(warn)studio.prepend(note);else el('accountSettings').append(note);
 }).catch(()=>{});
 let current=null,busy=false,activeDay=1;
+let activeSection='recipientForm';
+const sectionButtons=Array.from(el('studioSections').querySelectorAll('button'));
+function showSection(id){
+  activeSection=id;
+  for(const button of sectionButtons){
+    const selected=button.dataset.section===id;
+    el(button.dataset.section).hidden=!selected;
+    if(selected)button.setAttribute('aria-current','step');
+    else button.removeAttribute('aria-current');
+  }
+}
+for(const button of sectionButtons)button.onclick=()=>showSection(button.dataset.section);
 const drafts=new Map();
 const windowFields=['dayNote'];
 const calendarFields=['recipientEmail','categories','calStyle','calBg','recipientName','senderName','dedication'];
@@ -171,6 +183,9 @@ function display(c){
   el('deleteCalendar').hidden=!c;
   current=c;el('recipientEmail').value=c?.email||'';el('categories').value=formatInterests(c?.interests||[]);
   el('calStyle').selectedIndex=0;el('calBg').selectedIndex=0;
+  el('studioSections').hidden=!c;
+  el('manageCalendar').hidden=!c;
+  showSection(c?activeSection:'recipientForm');
   el('delivery').hidden=!c;el('library').value=c?.id||'';
   el('build').textContent=c?'Save calendar changes':'Create calendar';
   if(!c){calendarBaseline=JSON.stringify(values(calendarFields));previewArt();return;}
@@ -183,7 +198,7 @@ function display(c){
     tile.append(image,name);
     if(d.media.matchType){const label=document.createElement('small');label.textContent=({full:'Full interest match',related:'Related interest',festive:'Christmas artwork'})[d.media.matchType];tile.append(label)}
     if(d.media.matched?.length){const tags=document.createElement('small');tags.textContent='Matched: '+d.media.matched.join(', ');tile.append(tags)}
-    tile.onclick=()=>{el('editDay').value=String(i+1);door();el('dayNote').focus()};
+    tile.onclick=()=>{el('editDay').value=String(i+1);door();el('matches').open=false;el('editDay').focus()};
     return tile;
   }));
   for(const [day,src] of doorPhotos)updatePhotoTile(day,src);
@@ -202,7 +217,7 @@ async function work(action){
 }
 async function open(id){
   if(hasEdits()&&!confirm('Discard your unsaved edits and open another calendar?')){el('library').value=current?.id||'';return}
-  const c=id?await api(id):null;drafts.clear();el('editDay').value='1';display(c);status.textContent='';
+  const c=id?await api(id):null;drafts.clear();el('editDay').value='1';activeSection='recipientForm';el('manageCalendar').open=false;display(c);status.textContent='';
 }
 el('library').onchange=e=>work(async()=>{
   try{await open(e.target.value)}catch(error){el('library').value=current?.id||'';throw error}
@@ -223,7 +238,7 @@ el('recipientForm').onsubmit=e=>{e.preventDefault();work(async()=>{
   const data={recipientName:el('recipientName').value,senderName:el('senderName').value,dedication:el('dedication').value,email:el('recipientEmail').value,interests:parseInterests(el('categories').value),style:el('calStyle').value,background:el('calBg').value,version:current?.version};
   const creating=!current;
   display(await api(current?.id,post(data)));
-  if(creating)requestAnimationFrame(()=>el('inviteHeading').focus());
+  if(creating){showSection('windowSection');requestAnimationFrame(()=>el('editDay').focus())}
   status.textContent='Calendar saved. Your private invitation is ready.';
 })};
 el('editDay').onchange=door;
