@@ -11,11 +11,21 @@ async function api(id,options={},day){
   return r.json();
 }
 const post=data=>({method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+function previewArt(){
+  const selected=el('calBg').value;
+  if(!selected)return;
+  el('calendarArt').src='/'+themeImage(selected)+'.webp';
+  el('calendarArt').alt=selected;
+  const dayBg=el('doorBg').value||selected;
+  el('doorArt').src='/'+themeImage(dayBg)+'.webp';el('doorArt').alt=dayBg;
+}
+el('calBg').addEventListener('change',previewArt);
+el('doorBg').addEventListener('change',previewArt);
 function door(){
   if(!current)return;
   const d=current.doors[Number(el('editDay').value)-1];
   el('doorInterest').value=d.category;el('doorStyle').value=d.style;el('doorBg').value=d.background||'';
-  el('replaceGif').checked=false;
+  previewArt();el('replaceGif').checked=false;
   const image=new Image();image.alt=d.category;image.src='https://media.giphy.com/media/'+encodeURIComponent(d.media.id)+'/giphy.gif';
   el('miniPreview').replaceChildren(image);
 }
@@ -24,7 +34,7 @@ function display(c){
   el('calStyle').selectedIndex=0;el('calBg').selectedIndex=0;
   el('delivery').hidden=!c;el('library').value=c?.id||'';
   el('build').textContent=c?'Save calendar changes':'Find content and create calendar';
-  if(!c)return;
+  if(!c){previewArt();return;}
   el('calStyle').value=c.style;el('calBg').value=c.background;
   const url=location.origin+'/#calendar='+c.invite;
   el('inviteUrl').value=url;el('previewInvite').href='/#calendar='+c.test;

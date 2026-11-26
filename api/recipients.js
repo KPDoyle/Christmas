@@ -3,7 +3,7 @@ import {randomBytes,createHmac} from 'node:crypto';
 import {findGifs} from '../lib/discovery.js';
 
 const styles=['Traditional','Humorous','Heartwarming','Playful','Scenic'];
-const backgrounds=['Dickensian London','Victorian Christmas market','Snowy coaching inn'];
+import {backgrounds} from '../lib/backgrounds.js';
 const prefix='recipient-calendars/';
 const pathFor=id=>prefix+id+'.json';
 const signature=(id,role)=>createHmac('sha256',process.env.CALENDAR_KEY).update(role+'/'+id).digest('base64url');
@@ -77,7 +77,7 @@ export default async function handler(req,res){
         if(photo?.statusCode!==200)return res.status(404).end();
         res.setHeader('Content-Type','image/jpeg');return res.send(Buffer.from(await new Response(photo.stream).arrayBuffer()));
       }
-      return res.json(admin?view(c):{unlocked,preview:test,background:c.background});
+      return res.json(admin?view(c):{unlocked,preview:test,background:c.background,backgrounds});
     }
     if(!admin)return res.status(403).end();
     if(req.method==='POST'&&day&&c&&typeof req.body?.photo==='string'){

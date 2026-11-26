@@ -29,7 +29,7 @@ for(const [index,variable] of ['--street','--market','--inn'].entries()){
   street.style.setProperty(variable,'url(/'+paintings[(visit+index)%3]+'.webp)');
 }
 function themeImage(name){
-  return ({'Victorian Christmas market':'market','Snowy coaching inn':'inn'})[name]||'carol';
+  return ({'Dickensian London':'carol','Victorian Christmas market':'market','Snowy coaching inn':'inn'})[name] || (name?'scenes/'+name.toLowerCase().replace(/[^a-z0-9]+/g,'-'):'carol');
 }
 function showOpened(button,n){
   button.classList.add('opened');
@@ -43,9 +43,11 @@ async function refresh(){
   state=await r.json();
   if(recipient){
     const theme=themeImage(state.background);
-    const start=paintings.indexOf(theme);
+    const catalog=(state.backgrounds||[]).map(themeImage);
+    const start=Math.max(0,catalog.indexOf(theme));
+    const trio=catalog.length?Array.from({length:3},(_,i)=>catalog[(start+i)%catalog.length]):paintings;
     for(const [index,variable] of ['--street','--market','--inn'].entries()){
-      street.style.setProperty(variable,'url(/'+paintings[(start+visit+index)%3]+'.webp)');
+      street.style.setProperty(variable,'url(/'+trio[(visit+index)%3]+'.webp)');
     }
     street.dataset.theme=theme;
   }
@@ -69,7 +71,7 @@ async function refresh(){
     const b=document.createElement('button');
     b.className='door'+(n<=state.unlocked?' available':'');
     const [x,y]=windows[(n-1+visit*7)%25];
-    b.style.left=x+'%';b.style.top=y+'%';
+    b.style.setProperty('--slot',(n-1+visit*7)%25);b.style.left=x+'%';b.style.top=y+'%';
     b.dataset.mark=marks[(n*3+Math.floor(n/5))%5];
     b.textContent=String(n).padStart(2,'0');
     b.setAttribute('aria-label',n+' December'+(state.filled?.includes(n)?', photo ready':''));
