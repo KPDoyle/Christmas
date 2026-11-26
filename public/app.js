@@ -290,3 +290,16 @@ el('discover').onsubmit=async e=>{
 function mediaUrl(media,thumb=false){
   return media.scene?'/'+themeImage(media.scene)+'.webp':'https://media.giphy.com/media/'+encodeURIComponent(media.id)+(thumb?'/200w_s.gif':'/giphy.gif');
 }
+
+const pauseScene=el('pauseScene');
+function setScenePaused(paused){
+  street.classList.toggle('paused',paused);
+  pauseScene.setAttribute('aria-pressed',String(paused));
+  pauseScene.textContent=paused?'Resume scenery':'Pause scenery';
+}
+try{setScenePaused(localStorage.getItem('calendar-post:pause-scene')==='yes')}catch{}
+pauseScene.onclick=()=>{
+  const paused=!street.classList.contains('paused');
+  setScenePaused(paused);
+  try{localStorage.setItem('calendar-post:pause-scene',paused?'yes':'no')}catch{}
+};

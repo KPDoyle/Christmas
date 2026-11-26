@@ -126,7 +126,10 @@ el('lookup').onsubmit=e=>{e.preventDefault();work(async()=>{
 el('recipientForm').onsubmit=e=>{e.preventDefault();work(async()=>{
   status.textContent='Finding content and preparing the calendar…';
   const data={recipientName:el('recipientName').value,senderName:el('senderName').value,dedication:el('dedication').value,email:el('recipientEmail').value,interests:parseInterests(el('categories').value),style:el('calStyle').value,background:el('calBg').value,version:current?.version};
-  display(await api(current?.id,post(data)));status.textContent='Calendar saved. Your private invitation is ready.';
+  const creating=!current;
+  display(await api(current?.id,post(data)));
+  if(creating)requestAnimationFrame(()=>el('inviteHeading').focus());
+  status.textContent='Calendar saved. Your private invitation is ready.';
 })};
 el('editDay').onchange=door;
 el('doorForm').onsubmit=e=>{e.preventDefault();work(async()=>{
