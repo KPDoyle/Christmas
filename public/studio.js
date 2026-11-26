@@ -90,9 +90,12 @@ function setMediaMode(photo){
   el('photoMode').setAttribute('aria-pressed',String(photo));
   el('animationMode').setAttribute('aria-pressed',String(!photo));
 }
-for(const id of ['photoMode','animationMode']){
-  el(id).onclick=()=>{modeChanges++;setMediaMode(id==='photoMode')};
-}
+el('photoMode').onclick=()=>{modeChanges++;setMediaMode(true)};
+el('animationMode').onclick=()=>{
+  modeChanges++;
+  setMediaMode(false);
+  browseAnimations();
+};
 let photoRequest=0;
 let previewUrl='';
 function showPhoto(blob){
@@ -136,10 +139,6 @@ function door(){
   if(!current)return;
   activeDay=Number(el('editDay').value);
   const d=current.doors[activeDay-1];
-  const topics=el('animationTopic');
-  const choices=new Set([d.category,...(current.interests||[]),'Christmas','Animals','Boats','Gardening','Minions','Music','Sport','Travel']);
-  topics.replaceChildren(...Array.from(choices,topic=>new Option(topic,topic)),new Option('Enter a topic…',''));
-  topics.value=d.category;
   loadPhoto(current.id,activeDay);
   el('dayNote').value=d.note||'';
   if(drafts.has(activeDay))applyValues(windowFields,drafts.get(activeDay));
@@ -238,19 +237,15 @@ function clearChoices(){
   el('saveAnimation').disabled=true;
 }
 function browseAnimations(){
-  const selector=el('animationTopic');
-  const topic=selector.value||prompt('Enter an animation topic for this window')?.trim();
+  const topic=current.doors[activeDay-1].category;
   clearChoices();
-  if(!topic){selector.value=current.doors[activeDay-1].category;return}
-  if(!Array.from(selector.options).some(o=>o.value===topic))selector.add(new Option(topic,topic),selector.options.length-1);
-  selector.value=topic;
   work(async()=>{
     status.textContent='Finding animations…';
     const door=current.doors[activeDay-1];
     const result=await api(current.id,post({browse:true,category:topic,style:door.style,version:current.version}),activeDay);
     options=result.options;
     el('animationResults').hidden=false;
-    el('animationFeedback').textContent=options.length?'Choose an animation from the results.':'No matching animations. Try another topic.';
+    el('animationFeedback').textContent=options.length?'Choose an animation from the results.':'No other animations were found for this window.';
     el('saveAnimation').hidden=!options.length;
     el('animationChoices').replaceChildren(...options.map((option,index)=>{
       const label=document.createElement('label');
@@ -271,12 +266,10 @@ function browseAnimations(){
     status.textContent='';
   });
 }
-el('animationTopic').onchange=browseAnimations;
-el('replaceGif').onclick=browseAnimations;
 function saveWindow(selection){
   return work(async()=>{
     const door=current.doors[activeDay-1];
-    const category=selection?el('animationTopic').value:door.category;
+    const category=door.category;
     const data={note:selection?door.note:el('dayNote').value,category,style:door.style,background:door.background,selection,version:current.version};
     const pendingCalendar=calendarChanged()?values(calendarFields):null;
     const saved=await api(current.id,post(data),activeDay);
