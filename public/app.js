@@ -89,7 +89,7 @@ function showGift(){
     };
     title.textContent='Christmas, made for you.';
     intro.textContent='25 illustrated doors filled with their favourite things and messages from you.';
-    el('mode').textContent='EXPLORE A SAMPLE GIFT';
+    el('mode').hidden=false;el('mode').textContent='EXPLORE A SAMPLE GIFT';
   }else if(recipient && state.recipientName){
     title.textContent='Christmas for '+state.recipientName;
     intro.textContent='December 2026';
@@ -119,7 +119,7 @@ async function refresh(){
   }
   if(state.preview){
     if(recipient){const home=el('adminHome');home.hidden=false;home.onclick=()=>{location.hash='admin=session&edit='+encodeURIComponent(recipient.split('.')[0]);location.reload()}}
-    el('mode').textContent='TEST CALENDAR';
+    el('mode').hidden=false;el('mode').textContent='TEST CALENDAR';
   }
   if(state.guest){
     try{sessionStorage.setItem('calendarAdminHome',location.hash)}catch{}
@@ -129,7 +129,7 @@ async function refresh(){
     el('editor').hidden=true;
     el('topics').replaceChildren(...state.topics.map(t=>new Option(t.name,t.id)));
     el('topics').value=chosenTopic;
-    el('mode').textContent='CALENDAR ADMIN';
+    el('mode').hidden=false;el('mode').textContent='CALENDAR ADMIN';
     el('share').hidden=false;
   }
   el('grid').replaceChildren();
