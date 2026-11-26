@@ -92,6 +92,7 @@ export default async function handler(req,res){
       if(day){
         const door=c.doors[day-1];
         if(req.query.card==='1')return res.json({topic:door.category,note:door.note||'',media:door.media,background:door.background||c.background});
+        if(door.preferAnimation)return res.status(404).end();
         const photo=await get('recipient-photos/'+id+'/'+day+'.jpg',{access:'private',useCache:false});
         if(photo?.statusCode!==200)return res.status(404).end();
         res.setHeader('Content-Type','image/jpeg');return res.send(Buffer.from(await new Response(photo.stream).arrayBuffer()));
@@ -100,9 +101,18 @@ export default async function handler(req,res){
     }
     if(!admin)return res.status(403).end();
     if(req.method==='POST'&&day&&c&&typeof req.body?.photo==='string'){
+      if(req.body.version && req.body.version!==c.version)return res.status(409).send('Calendar changed. Reopen it before saving.');
       const bytes=Buffer.from(String(req.body?.photo||''),'base64');
       if(bytes.length>2500000||bytes[0]!==255||bytes[1]!==216)throw bad('Choose a JPEG photo.');
       await put('recipient-photos/'+id+'/'+day+'.jpg',bytes,{access:'private',allowOverwrite:true,contentType:'image/jpeg'});
+      if(c.doors[day-1].preferAnimation){
+        const latest=await read(pathFor(id));
+        if(latest?.version!==c.version)return res.status(409).send('Calendar changed. Reopen it before saving.');
+        latest.doors[day-1].preferAnimation=false;
+        latest.version=randomBytes(12).toString('hex');
+        await put(pathFor(id),JSON.stringify(latest),{access:'private',allowOverwrite:true,contentType:'application/json'});
+        return res.json({saved:true,version:latest.version});
+      }
       return res.json({saved:true});
     }
     if(req.method!=='POST')return res.status(405).end();
@@ -122,6 +132,7 @@ export default async function handler(req,res){
         const replacement=alternatives.find(m=>!used.has(m.id))||alternatives[0];
         if(!replacement)return res.status(422).send('No different animation was found. Your current window is still saved. Try another interest or upload a photo.');
         next.doors[day-1].media=replacement;
+        next.doors[day-1].preferAnimation=true;
       }else if(category!==old.category||style!==old.style)await populate(next.doors,[day-1]);
     }else{
       const email=String(input.email||'').trim();

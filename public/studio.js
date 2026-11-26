@@ -94,13 +94,17 @@ function showPhoto(blob){
 async function loadPhoto(id,day){
   const request=++photoRequest;
   showPhoto(null);
-  
+  const door=current.doors[day-1];
+  const preview=el('savedPhotoPreview');
+  preview.src=mediaUrl(door.media);
+  preview.hidden=false;
   const caption=el('recipientFilename');
+  if(door.preferAnimation){caption.textContent='';return}
   caption.textContent='Checking for a saved photo…';
   try{
     const response=await fetch('/api/recipients?id='+encodeURIComponent(id)+'&day='+day,{headers,cache:'no-store'});
     if(request!==photoRequest)return;
-    if(response.status===404){caption.textContent='No photo added yet.';return}
+    if(response.status===404){caption.textContent='';return}
     if(!response.ok)throw Error();
     const blob=await response.blob();
     if(request!==photoRequest)return;
@@ -207,6 +211,7 @@ el('doorForm').onsubmit=e=>{e.preventDefault();work(async()=>{
   if(data.replace)status.textContent='Searching for a different animation…';
   const pendingCalendar=calendarChanged()?values(calendarFields):null;
   const saved=await api(current.id,post(data),activeDay);
+  if(data.replace)updatePhotoTile(activeDay,mediaUrl(saved.doors[activeDay-1].media));
   drafts.delete(activeDay);display(saved);
   if(pendingCalendar){applyValues(calendarFields,pendingCalendar);previewArt()}
  status.textContent=data.replace?'New animation saved to this window.':'Window saved to the existing invitation.';
@@ -217,7 +222,9 @@ el('recipientPhoto').onchange=e=>{const file=e.target.files[0];if(!file)return;+
   try{const img=new Image();img.src=src;await img.decode();const scale=Math.min(1,1600/Math.max(img.width,img.height));
     const cv=document.createElement('canvas');cv.width=Math.max(1,Math.round(img.width*scale));cv.height=Math.max(1,Math.round(img.height*scale));
     cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
-    await api(current.id,post({photo:cv.toDataURL('image/jpeg',.83).split(',')[1]}),el('editDay').value);
+    const result=await api(current.id,post({photo:cv.toDataURL('image/jpeg',.83).split(',')[1],version:current.version}),activeDay);
+    if(result.version)current.version=result.version;
+    current.doors[activeDay-1].preferAnimation=false;
     const thumb=document.createElement('canvas');thumb.width=160;thumb.height=Math.max(1,Math.round(160*cv.height/cv.width));if(thumb.height>160){thumb.width=Math.max(1,Math.round(160*cv.width/cv.height));thumb.height=160}
     thumb.getContext('2d').drawImage(cv,0,0,thumb.width,thumb.height);
     updatePhotoTile(activeDay,thumb.toDataURL('image/jpeg',.8));
