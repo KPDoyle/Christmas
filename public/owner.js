@@ -33,15 +33,11 @@ function renderSender(s){
     ?'Microsoft 365 needs you to sign in again ('+(s.lastError||'token expired')+'). Password-reset emails cannot be sent until you reconnect.'
     :'The Microsoft 365 sender is not connected, so password-reset emails cannot be sent. Connect it and sign in as '+s.expectedEmail+'.';
 }
-async function load(settings=false){
+async function load(){
   if(resetToken){show('resetForm','Reset your password');return}
   const r=await fetch('/api/owner?action=status',{credentials:'same-origin'});
   const s=await r.json();
-  if(s.loggedIn){
-    if(!settings && !new URLSearchParams(location.search).has('settings') && !hash.has('connected') && !hash.has('error')){
-      location.replace('/#admin=session');return;
-    }
-    $('ownerEmail').textContent=s.email;$('senderSettings').hidden=!s.sender;if(s.sender)renderSender(s.sender);show('dashboard','Account settings');return}
+  if(s.loggedIn){$('ownerEmail').textContent=s.email;$('senderSettings').hidden=!s.sender;if(s.sender)renderSender(s.sender);show('dashboard','Account settings');return}
   $('ownerSetup').hidden=!s.setupRequired;
   if(hash.has('signup')){show('signupForm','Create your organiser account');return}
   show('loginForm','Calendar Creator Sign-in');
@@ -63,7 +59,7 @@ $('resetForm').onsubmit=busy($('resetForm'),async()=>{
 $('setupForm').onsubmit=busy($('setupForm'),async()=>{
   if($('setupPassword').value!==$('setupConfirm').value)throw Error('The passwords do not match.');
   await call('setup',{key:$('setupKey').value,password:$('setupPassword').value});
-  say('Owner account created. Next, connect the Microsoft 365 sender so password resets can be emailed.','ok');await load(true);
+  say('Owner account created. Next, connect the Microsoft 365 sender so password resets can be emailed.','ok');await load();
 });
 $('logout').onclick=async()=>{await call('logout');try{sessionStorage.removeItem('calendarAdminHome')}catch{};say('Signed out.');await load()};
 $('testSender').onclick=async()=>{try{const r=await call('ms-test');say('Test email sent to '+r.sentTo+'.','ok')}catch(e){say(e.message,'warning');load()}};

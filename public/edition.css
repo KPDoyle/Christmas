@@ -109,5 +109,3 @@ header:has(#adminHome:not([hidden])) nav{margin-left:auto}
 #studioPreviewHeading[hidden]{display:none}
 #studioPreviewHeading h2{margin:0;color:inherit;font:normal clamp(26px,3vw,36px) Georgia,serif}
 #openStudioPreview{color:inherit;text-underline-offset:4px;padding:10px 0}
-
-#managePreviewCalendar{min-height:44px;padding:8px 16px;border:1px solid #b69e72;border-radius:6px;background:#f2d59b;color:#183047;font-weight:600;cursor:pointer}
