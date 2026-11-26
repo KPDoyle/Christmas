@@ -13,35 +13,31 @@
 <label>Content style<select id="calStyle"></select></label><label>Calendar Background<select id="calBg"></select><img class="artSample" id="calendarArt" alt=""></label>
 <details class="personalise"><summary>Add a personalized message</summary><label>Your name<input id="senderName" maxlength="60"></label><label>Opening message<textarea id="dedication" maxlength="400" rows="3" placeholder="I chose these little surprises because…"></textarea></label></details><button id="build">Find content and create calendar</button></fieldset></form>
 <div id="delivery" hidden><section id="windowSection" hidden><p id="draftStatus" role="status"></p><form id="doorForm"><fieldset>
-<legend>Edit any calendar windows</legend>
-<label class="windowDay">Choose a window<select id="editDay"></select></label><details id="matches"><summary>View all 25 windows</summary><div id="matchGrid"></div></details>
+<legend>Edit a calendar window</legend>
+<div class="dayToolbar"><label>Choose a window<select id="editDay"></select></label><button type="button" id="prevDay" aria-label="Previous window">←</button><button type="button" id="nextDay" aria-label="Next window">→</button></div><details id="matches"><summary>View all 25 windows</summary><div id="matchGrid"></div></details>
 <div class="windowColumns">
   <div class="windowMedia">
-    <div class="mediaSwitch" role="group" aria-label="Edit window content">
-      <button type="button" id="animationMode" aria-pressed="true" aria-controls="animationPanel">Find a different animation</button>
-      <button type="button" id="photoMode" aria-pressed="false" aria-controls="photoPanel">Photo</button>
+    <h3 id="mediaHeading">Window content</h3>
+    <div class="windowActions">
+      <button type="button" id="animationMode" aria-expanded="false" aria-controls="animationResults">Find a different animation</button>
+      <label class="photoPicker"><span class="choosePhotoText">Upload photo</span><input type="file" accept="image/*" id="recipientPhoto"></label>
     </div>
-    <div id="animationPanel" class="mediaPanel">
+    <span id="recipientFilename" class="fileName" role="status"></span>
+    <div id="savedView"><img id="savedPhotoPreview" hidden alt="Current content of the selected window"></div>
+    <div>
       <div id="animationResults" hidden>
         <p id="animationFeedback" role="status"></p>
         <div id="animationChoices" role="group" aria-label="Matching animations"></div>
         <img id="candidatePreview" hidden alt="Selected animation preview">
-        <button type="button" id="saveAnimation" disabled>Save selected animation</button>
+        <button type="button" id="saveAnimation" disabled>Save selected animation</button> <button type="button" id="cancelAnimation">Cancel</button>
       </div>
     </div>
-    <div id="photoPanel" class="mediaPanel" hidden>
-      <label class="photoPicker">Add or replace photo for this window
-        <span class="choosePhotoText">Choose photo</span>
-        <input type="file" accept="image/*" id="recipientPhoto">
-      </label>
-    </div>
-    <span id="recipientFilename" class="fileName" role="status"></span>
-    <img id="savedPhotoPreview" hidden alt="Current content of the selected window">
+
 
   </div>
   <div class="windowMessage">
     <label>Personal note for this day<textarea id="dayNote" rows="5" maxlength="320"></textarea></label>
-    <button type="submit">Save window</button>
+    <button id="saveNote" type="submit" disabled>Save note</button>
   </div>
 </div>
 </fieldset></form>

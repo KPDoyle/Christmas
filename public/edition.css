@@ -89,3 +89,16 @@ header:has(#adminHome:not([hidden])) nav{margin-left:auto}
 #shareSection h3{margin:0;color:#ffe2ac;font:400 28px var(--book)}
 #shareSection .inviteActions{margin:0}
 .sharePreview a{display:inline-flex;align-items:center;min-height:44px}
+
+.dayToolbar,.windowActions{display:flex;align-items:end;gap:8px;flex-wrap:wrap}
+.dayToolbar label{flex:0 1 15rem}
+.dayToolbar button{min-width:44px}
+#doorForm button:disabled{opacity:.48;cursor:default}
+#doorForm .windowActions .photoPicker{width:auto}
+#doorForm .windowActions .choosePhotoText,#doorForm #cancelAnimation{border:1px solid #baab8d;background:transparent;color:#ffe2ac;box-sizing:border-box}
+#doorForm .windowMedia h3{margin:0;color:#ffe2ac;font:400 26px var(--book)}
+#savedView{min-width:0}
+#savedView img{display:block}
+#doorForm #matches{margin-top:6px}
+#doorForm .windowMessage{padding:16px;border:1px solid #617487;border-radius:8px}
+@media(max-width:480px){.dayToolbar label{flex:1 1 100px}}

@@ -45,10 +45,11 @@ function trackWindow(){
   const d=current.doors[activeDay-1], data=values(windowFields);
   if(JSON.stringify(data)===JSON.stringify([d.note||'']))drafts.delete(activeDay);
   else drafts.set(activeDay,data);
+  el('saveNote').disabled=!drafts.has(activeDay);
   updateDraftStatus();
 }
 function updateDraftStatus(){
-  el('draftStatus').textContent=drafts.size?'Unsaved windows: '+[...drafts.keys()].sort((a,b)=>a-b).join(', ')+'. Select a window and use Save window.':'';
+  el('draftStatus').textContent=drafts.size?'Unsaved windows: '+[...drafts.keys()].sort((a,b)=>a-b).join(', ')+'. Select a window and use Save note.':'';
 }
 el('doorForm').addEventListener('input',event=>{if(windowFields.includes(event.target.id))trackWindow()});
 function hasEdits(){return drafts.size>0||(calendarBaseline&&calendarChanged())}
@@ -93,21 +94,11 @@ function previewArt(){
   el('calendarArt').alt=selected;
 }
 el('calBg').addEventListener('change',previewArt);
-let mediaWindow='';
-let modeChanges=0;
-function setMediaMode(photo){
-  if(photo)clearChoices();
-  el('photoPanel').hidden=!photo;
-  el('animationPanel').hidden=photo;
-  el('photoMode').setAttribute('aria-pressed',String(photo));
-  el('animationMode').setAttribute('aria-pressed',String(!photo));
+el('animationMode').onclick=browseAnimations;
+el('cancelAnimation').onclick=()=>{clearChoices();el('animationMode').focus()};
+for(const [id,step] of [['prevDay',-1],['nextDay',1]]){
+  el(id).onclick=()=>{el('editDay').value=String(activeDay+step);door()};
 }
-el('photoMode').onclick=()=>{modeChanges++;setMediaMode(true)};
-el('animationMode').onclick=()=>{
-  modeChanges++;
-  setMediaMode(false);
-  browseAnimations();
-};
 let photoRequest=0;
 let previewUrl='';
 function showPhoto(blob){
@@ -120,11 +111,6 @@ function showPhoto(blob){
 }
 async function loadPhoto(id,day){
   const request=++photoRequest;
-  const key=id+'/'+day;
-  const autoSelect=mediaWindow!==key;
-  const changes=modeChanges;
-  mediaWindow=key;
-  if(autoSelect)setMediaMode(false);
   showPhoto(null);
   const door=current.doors[day-1];
   const preview=el('savedPhotoPreview');
@@ -141,7 +127,6 @@ async function loadPhoto(id,day){
     const blob=await response.blob();
     if(request!==photoRequest)return;
     showPhoto(blob);
-    if(autoSelect && modeChanges===changes)setMediaMode(true);
     caption.textContent='Saved photo for window '+day;
   }catch{if(request===photoRequest)caption.textContent='Saved photo preview unavailable.'}
 }
@@ -150,6 +135,10 @@ function door(){
   el('recipientFilename').textContent='';
   if(!current)return;
   activeDay=Number(el('editDay').value);
+  el('prevDay').disabled=activeDay===1;
+  el('nextDay').disabled=activeDay===current.doors.length;
+  el('mediaHeading').textContent=activeDay+' December · Window content';
+  el('saveNote').disabled=!drafts.has(activeDay);
   const d=current.doors[activeDay-1];
   loadPhoto(current.id,activeDay);
   el('dayNote').value=d.note||'';
@@ -167,7 +156,7 @@ function updatePhotoTile(day,src){
 }
 function display(c){
   if(studioCalendarId!==(c?.id||'')){
-    photoRequest++;mediaWindow='';showPhoto(null);doorPhotos.clear();
+    photoRequest++;showPhoto(null);doorPhotos.clear();
     document.querySelectorAll('.street .door').forEach(tile=>tile.style.removeProperty('--uploaded-photo'));
   }
   studioCalendarId=c?.id||'';
@@ -245,6 +234,8 @@ el('editDay').onchange=door;
 let options=[],selectedOption=null;
 function clearChoices(){
   options=[];selectedOption=null;
+  el('savedView').hidden=false;
+  el('animationMode').setAttribute('aria-expanded','false');
   el('animationResults').hidden=true;
   el('animationChoices').replaceChildren();
   el('candidatePreview').hidden=true;
@@ -259,6 +250,7 @@ function browseAnimations(){
     const door=current.doors[activeDay-1];
     const result=await api(current.id,post({browse:true,category:topic,style:door.style,version:current.version}),activeDay);
     options=result.options;
+    el('animationMode').setAttribute('aria-expanded','true');
     el('animationResults').hidden=false;
     el('animationFeedback').textContent=options.length?'Choose an animation from the results.':'No other animations were found for this window.';
     el('saveAnimation').hidden=!options.length;
@@ -270,10 +262,11 @@ function browseAnimations(){
       const img=new Image();img.alt='';img.loading='lazy';img.src=mediaUrl(option.media,true);
       radio.onchange=()=>{
         selectedOption=option;
+        el('savedView').hidden=true;
         el('candidatePreview').src=mediaUrl(option.media);
         el('candidatePreview').hidden=false;
         el('saveAnimation').disabled=false;
-        el('animationFeedback').textContent='Animation '+(index+1)+' of '+options.length;
+        el('animationFeedback').textContent='Previewing animation '+(index+1)+' of '+options.length;
         label.scrollIntoView({block:'nearest',inline:'nearest'});
       };
       label.append(radio,img);return label;
@@ -292,13 +285,13 @@ function saveWindow(selection){
     else drafts.delete(activeDay);
     display(saved);
     if(pendingCalendar){applyValues(calendarFields,pendingCalendar);previewArt()}
-    status.textContent=selection?'Selected animation saved to this window.':'Window saved to the existing invitation.';
+    status.textContent=selection?'Selected animation saved to this window.':'Personal note saved.';
   });
 }
 el('doorForm').onsubmit=e=>{e.preventDefault();saveWindow(null)};
 el('saveAnimation').onclick=()=>{if(selectedOption)saveWindow(selectedOption)};
 el('copyInvite').onclick=async()=>{try{await navigator.clipboard.writeText(el('inviteUrl').value);status.textContent='Invitation copied.'}catch{el('inviteUrl').select();status.textContent='Copy the selected invitation.'}};
-el('recipientPhoto').onchange=e=>{const file=e.target.files[0];if(!file)return;++photoRequest;showPhoto(file);el('recipientFilename').textContent='Uploading '+file.name+'…';work(async()=>{
+el('recipientPhoto').onchange=e=>{const file=e.target.files[0];if(!file)return;clearChoices();++photoRequest;showPhoto(file);el('recipientFilename').textContent='Uploading '+file.name+'…';work(async()=>{
   const src=URL.createObjectURL(file);
   try{const img=new Image();img.src=src;await img.decode();const scale=Math.min(1,1600/Math.max(img.width,img.height));
     const cv=document.createElement('canvas');cv.width=Math.max(1,Math.round(img.width*scale));cv.height=Math.max(1,Math.round(img.height*scale));
