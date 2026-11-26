@@ -1,5 +1,11 @@
 (()=>{
 if(!params.has('admin'))return;
+document.addEventListener('click',event=>{
+  const button=event.target.closest?.('#studio button,#editor button,#adminHome');
+  if(button && !matchMedia('(prefers-reduced-motion: reduce)').matches){
+    button.animate([{transform:'translateY(2px)'},{transform:'translateY(0)'}],{duration:180,easing:'ease-out'});
+  }
+},true);
 const studio=el('studio'),status=el('studioStatus');
 let current=null,busy=false;
 const opts=(select,values)=>select.replaceChildren(...values.map(v=>new Option(v,v)));

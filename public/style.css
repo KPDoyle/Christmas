@@ -47,3 +47,7 @@ header nav{display:flex;align-items:center;gap:16px}
 #studio .artSample{height:clamp(110px,14vw,175px)}
 @media(min-width:900px){.calendar{margin-inline:auto}.street{max-height:78vh}#delivery{margin-top:24px}#lookup{align-items:end}}
 @media(max-width:540px){header nav>span{display:none}header nav{margin-left:auto}#studio form{max-width:100%}}
+
+@media(min-width:881px){.street{min-height:440px}}
+:is(#studio,#editor) button:active,#adminHome:active{translate:0 2px;filter:brightness(.88)}
+@media(prefers-reduced-motion:reduce){:is(#studio,#editor) button:active,#adminHome:active{translate:none}}
