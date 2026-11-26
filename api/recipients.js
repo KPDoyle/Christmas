@@ -4,7 +4,7 @@ import {randomBytes,createHmac} from 'node:crypto';
 import {findGifs,chooseDoorMedia} from '../lib/discovery.js';
 
 const styles=['Traditional','Humorous','Heartwarming','Playful','Scenic'];
-import {backgrounds,calendarBackgrounds} from '../lib/backgrounds.js';
+import {backgrounds,calendarBackgrounds,backgroundGroups,rotationFor} from '../lib/backgrounds.js';
 import {accountSession} from '../lib/owner/session.js';
 const prefix='recipient-calendars/';
 const pathFor=id=>prefix+id+'.json';
@@ -70,7 +70,7 @@ export default async function handler(req,res){
         calendars.push(...items.filter(owns).map(c=>({id:c.id,email:c.email})));
         cursor=batch.hasMore?batch.cursor:null;
       }while(cursor);
-      return res.json({calendars,styles,backgrounds,calendarBackgrounds});
+      return res.json({calendars,styles,backgrounds,calendarBackgrounds,backgroundGroups});
     }
     const c=id?await read(pathFor(id)):null;
     if(admin&&c&&!owns(c))return res.status(404).send('Calendar not found.');
@@ -96,7 +96,7 @@ export default async function handler(req,res){
         if(photo?.statusCode!==200)return res.status(404).end();
         res.setHeader('Content-Type','image/jpeg');return res.send(Buffer.from(await new Response(photo.stream).arrayBuffer()));
       }
-      return res.json(admin?view(c):{unlocked,preview:test,recipientName:c.recipientName||'',senderName:c.senderName||'',dedication:c.dedication||'',background:c.background,backgrounds});
+      return res.json(admin?view(c):{unlocked,preview:test,recipientName:c.recipientName||'',senderName:c.senderName||'',dedication:c.dedication||'',background:c.background,backgrounds:rotationFor(c.background)});
     }
     if(!admin)return res.status(403).end();
     if(req.method==='POST'&&day&&c&&typeof req.body?.photo==='string'){

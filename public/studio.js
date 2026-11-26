@@ -180,7 +180,10 @@ el('recipientPhoto').onchange=e=>{const file=e.target.files[0];if(!file)return;e
 })};
 api().then(async data=>{
   studio.hidden=false;
-  opts(el('calStyle'),data.styles);opts(el('doorStyle'),data.styles);opts(el('calBg'),data.calendarBackgrounds||data.backgrounds);opts(el('doorBg'),data.backgrounds);
+  opts(el('calStyle'),data.styles);opts(el('doorStyle'),data.styles);el('calBg').replaceChildren(...Object.entries(data.backgroundGroups).map(([label,scenes])=>{
+    const group=document.createElement('optgroup');group.label=label;
+    group.append(...scenes.map(scene=>new Option(scene,scene)));return group;
+  }));opts(el('doorBg'),data.backgrounds);
   el('doorBg').add(new Option('Use calendar background',''),0);
   for(let i=1;i<=25;i++)el('editDay').add(new Option(i+' December',String(i)));
   for(const c of data.calendars)el('library').add(new Option(c.email+' · '+c.id.slice(-6),c.id));
