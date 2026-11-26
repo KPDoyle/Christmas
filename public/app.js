@@ -1,6 +1,8 @@
 const el=id=>document.getElementById(id);
 const params=new URLSearchParams(location.hash.slice(1));
 const shareOrigin=location.hostname==='december-post-kevindoyle.vercel.app'?'https://calendar-post-kevindoyle.vercel.app':location.origin;
+if(params.has('admin') && params.get('admin')!=='session')location.replace('/owner.html');
+if(params.get('admin')==='session')fetch('/api/owner?action=status').then(r=>r.json()).then(s=>{if(!s.loggedIn)location.replace('/owner.html')});
 const recipient=params.get('calendar');
 const endpoint=recipient?'/api/recipients':'/api/calendar';
 const token=recipient||params.get('admin') || params.get('gift') || params.get('test') || '';
