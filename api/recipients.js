@@ -1,6 +1,6 @@
 import {get,put,list,del} from '@vercel/blob';
 import {randomBytes,createHmac} from 'node:crypto';
-import {findGifs} from '../lib/discovery.js';
+import {findGifs,chooseDoorMedia} from '../lib/discovery.js';
 
 const styles=['Traditional','Humorous','Heartwarming','Playful','Scenic'];
 import {backgrounds} from '../lib/backgrounds.js';
@@ -41,8 +41,7 @@ async function populate(doors,indexes){
     const first=doors[slots[0]];
     const found=await findGifs(first.category,{style:first.style,needed:25,exclude:used});
     for(const i of slots){
-      const clip=found.find(m=>!used.has(m.id));
-      if(!clip)throw bad('Too few distinct results for the category “'+first.category+'”. Try a broader interest.');
+      const clip=chooseDoorMedia(found,used,i);
       doors[i].media=clip;used.add(clip.id);
     }
   }));
@@ -83,10 +82,9 @@ export default async function handler(req,res){
     if(id&&!c)return res.status(404).send('Calendar not found.');
     const day=Number(req.query.day);
     if(req.query.day&&(!Number.isInteger(day)||day<1||day>25))throw bad('Invalid door.');
-    const unlocked=admin||test?25:Math.max(0,Math.min(25,1+Math.floor((Date.now()-Date.UTC(2026,11,1))/86400000)));
+    const unlocked=25;
     if(req.method==='GET'){
       if(day){
-        if(day>unlocked)return res.status(423).end();
         const door=c.doors[day-1];
         if(req.query.card==='1')return res.json({topic:door.category,note:door.note||'',media:door.media,background:door.background||c.background});
         const photo=await get('recipient-photos/'+id+'/'+day+'.jpg',{access:'private',useCache:false});

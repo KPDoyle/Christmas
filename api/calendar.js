@@ -1,6 +1,6 @@
 import { get, list, put } from '@vercel/blob';
 import { gifs } from '../lib/gifs.js';
-import { findGifs } from '../lib/discovery.js';
+import { findGifs, chooseDoorMedia } from '../lib/discovery.js';
 import { createHash, createHmac } from 'node:crypto';
 import { collections } from '../lib/postcards.js';
 const settingsPath = 'settings/2026-topic.txt';
@@ -20,7 +20,7 @@ export default async function handler(req, res) {
   const token = req.headers.authorization?.replace(/^Bearer /,'');
   const admin = token === key;
   const preview = token === previewKey;
-  const unlocked = preview ? 25 : Math.max(0, Math.min(25, 1 + Math.floor((Date.now()-Date.UTC(2026,11,1))/86400000)));
+  const unlocked=25;
   if(req.method==='POST' && req.query.discover==='1'){
     if(!admin)return res.status(403).end();
     const name=String(req.body?.name||'').trim();
@@ -31,7 +31,8 @@ export default async function handler(req, res) {
     if(existing?.statusCode===200)return res.json({id,name});
     let clips;
     try{clips=await findGifs(name)}catch{return res.status(503).send('GIF search is unavailable. Try again or choose a prepared topic.')}
-    if(clips.length!==25)return res.status(422).send('Fewer than 25 suitable GIFs were found. Try a broader topic.');
+    const found=clips, used=new Set();
+    clips=Array.from({length:25},(_,i)=>{const media=chooseDoorMedia(found,used,i);used.add(media.id);return media});
     await put(path,JSON.stringify({name,clips}),{access:'private',allowOverwrite:true,contentType:'application/json'});
     return res.json({id,name});
   }
@@ -59,7 +60,6 @@ export default async function handler(req, res) {
   }
   if (req.method !== 'GET') return res.status(405).end();
   if (!admin && !preview && token !== guest) return res.status(403).send('Open your invitation link to see the photos.');
-  if (!admin && day>unlocked) return res.status(423).send('Opens on '+day+' December.');
   if(req.query.card==='1'){
     const requested=req.query.topic;
     if(/^custom-[a-f0-9]{32}$/.test(requested)){

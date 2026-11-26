@@ -46,7 +46,7 @@ function door(){
   el('dayNote').value=d.note||'';
   el('doorInterest').value=d.category;el('doorStyle').value=d.style;el('doorBg').value=d.background||'';
   previewArt();el('replaceGif').checked=false;
-  const image=new Image();image.alt=d.category;image.src='https://media.giphy.com/media/'+encodeURIComponent(d.media.id)+'/giphy.gif';
+  const image=new Image();image.alt=d.category;image.src=mediaUrl(d.media);
   el('miniPreview').replaceChildren(image);
 }
 function display(c){
@@ -60,15 +60,17 @@ function display(c){
   el('calStyle').value=c.style;el('calBg').value=c.background;
   el('matchGrid').replaceChildren(...c.doors.map((d,i)=>{
     const tile=document.createElement('button');tile.type='button';tile.className='matchTile';
-    const image=new Image();image.loading='lazy';image.alt='';image.src='https://media.giphy.com/media/'+encodeURIComponent(d.media.id)+'/200w_s.gif';
+    const image=new Image();image.loading='lazy';image.alt='';image.src=mediaUrl(d.media,true);
     const name=document.createElement('span');name.textContent=(i+1)+' Dec · '+d.category;
     tile.append(image,name);
+    if(d.media.matchType){const label=document.createElement('small');label.textContent=({full:'Full interest match',related:'Related interest',festive:'Christmas artwork'})[d.media.matchType];tile.append(label)}
     if(d.media.matched?.length){const tags=document.createElement('small');tags.textContent='Matched: '+d.media.matched.join(', ');tile.append(tags)}
     tile.onclick=()=>{el('editDay').value=String(i+1);door();el('doorInterest').focus()};
     return tile;
   }));
-  const url=location.origin+'/#calendar='+c.invite;
+  const url=shareOrigin+'/#calendar='+c.invite;
   el('inviteUrl').value=url;el('previewInvite').href='/#calendar='+c.test;
+  el('previewInvite').onclick=e=>{e.preventDefault();location.hash='calendar='+c.test;location.reload()};
   el('mailInvite').href='mailto:'+encodeURIComponent(c.email)+'?subject='+encodeURIComponent('Your Christmas advent calendar')+'&body='+encodeURIComponent('A little Christmas surprise for you. Open a window each day in December.\n\n'+url);
   let option=Array.from(el('library').options).find(o=>o.value===c.id);
   if(!option){option=new Option(c.email,c.id);el('library').add(option)}

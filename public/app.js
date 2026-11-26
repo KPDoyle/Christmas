@@ -1,5 +1,6 @@
 const el=id=>document.getElementById(id);
 const params=new URLSearchParams(location.hash.slice(1));
+const shareOrigin=location.hostname==='december-post-kevindoyle.vercel.app'?'https://calendar-post-kevindoyle.vercel.app':location.origin;
 const recipient=params.get('calendar');
 const endpoint=recipient?'/api/recipients':'/api/calendar';
 const token=recipient||params.get('admin') || params.get('gift') || params.get('test') || '';
@@ -7,6 +8,29 @@ const demo=!token;
 const sampleSets={travel:[['Alpine chalets','For all the mountain trips we still have to take.'],['Christmas steam train','I still think the train ride was the best part of our holiday.'],['Northern lights cabin','One for the wish list. Next winter?']],food:[['Gingerbread bakery','Remember the gingerbread house that leaned to the left? It was still my favourite.'],['German market square','One day we’ll settle the great gingerbread debate in person.'],['Tudor Christmas feast','This one is for the person who always makes room for one more at the table.']],stage:[['Nutcracker ballet','For the night we missed our train because we stayed for every curtain call.'],['Victorian drawing room','Imagine rehearsing our lines beside this fire.'],['Midnight cathedral','I saved the music for the finale.']]};
 const sampleTheme=Object.hasOwn(sampleSets,params.get('sample'))?params.get('sample'):'travel';
 const samples=sampleSets[sampleTheme];
+const sampleScenes=[
+  "Dickensian London",
+  "Victorian Christmas market",
+  "Snowy coaching inn",
+  "Cotswold Christmas",
+  "Alpine chalets",
+  "Paris at Christmas",
+  "Dutch canal skating",
+  "German market square",
+  "Scandinavian harbour",
+  "Victorian drawing room",
+  "Toymaker workshop",
+  "Gingerbread bakery",
+  "Midnight cathedral",
+  "Tudor Christmas feast",
+  "Nutcracker ballet",
+  "Christmas steam train",
+  "Moonlit sleigh ride",
+  "Winter conservatory",
+  "Lanterns on the lake",
+  "Snowbound lighthouse",
+  "Northern lights cabin"
+];
 const headers={Authorization:'Bearer '+token};
 const windows=[[8,12],[24,12],[38,13],[66,17],[76,17],[91,10],[6,25],[25,25],[38,26],[65,29],[75,29],[87,27],[95,27],[10,36],[21,36],[39,35],[66,43],[78,43],[9,62],[20,60],[27,62],[38,65],[76,56],[87,57],[94,63]];
 const marks=['🎄','🕯️','🦌','🎁','🛷','🔔','🧦','🍪','⛄','🕊️'];
@@ -47,14 +71,14 @@ function showGift(){
     el('samplePicker').hidden=false;el('sampleTheme').value=sampleTheme;
     el('sampleTheme').onchange=e=>{location.hash='sample='+e.target.value;location.reload()};
     el('shareSample').onclick=async()=>{
-      const url=location.origin+'/#sample='+sampleTheme;
+      const url=shareOrigin+'/#sample='+sampleTheme;
       try{if(navigator.share)await navigator.share({title:'December Post',url});else{await navigator.clipboard.writeText(url);el('shareSample').textContent='Sample link copied'}}
       catch(e){if(e.name!=='AbortError')prompt('Copy sample link',url)}
     };
     title.textContent='Christmas, made for you.';
     intro.textContent='25 illustrated doors filled with their favourite things and messages from you.';
     el('mode').textContent='EXPLORE A SAMPLE GIFT';
-    el('hint').textContent='Try the first three doors to see the artwork and personal messages.';
+    el('hint').textContent='Open any of the 25 doors to explore this sample.';
   }else if(recipient && state.recipientName){
     title.textContent='Christmas for '+state.recipientName;
     intro.textContent='December 2026';
@@ -66,7 +90,7 @@ function showGift(){
 }
 function updateJourney(){
   if(state.guest)return;
-  const limit=demo?3:25;
+  const limit=25;
   const available=Math.min(state.unlocked,limit);
   const next=Array.from({length:available},(_,i)=>i+1).find(n=>!opened.has(n));
   el('journey').hidden=false;
@@ -77,7 +101,7 @@ function updateJourney(){
   if(next){el('nextDoor').textContent=(demo?'Try door ':'Open door ')+next;el('nextDoor').onclick=()=>openDay(next)}
 }
 async function refresh(){
-  if(demo)state={unlocked:3,recipientName:'Alex',senderName:'Sam',dedication:({travel:'A December full of places I’d love to explore with you.',food:'For the cook who makes our kitchen the warmest place in December.',stage:'For my favourite person to sit beside when the house lights go down.'})[sampleTheme]};
+  if(demo)state={unlocked:25,recipientName:'Alex',senderName:'Sam',dedication:({travel:'A December full of places I’d love to explore with you.',food:'For the cook who makes our kitchen the warmest place in December.',stage:'For my favourite person to sit beside when the house lights go down.'})[sampleTheme]};
   else {
   const r=await fetch(endpoint,{headers});
   if(!r.ok) throw Error('The calendar could not load. Please refresh.');
@@ -99,6 +123,7 @@ async function refresh(){
     el('hint').textContent='All 25 doors are open for testing.';
   }
   if(state.guest){
+    try{sessionStorage.setItem('calendarAdminHome',location.hash)}catch{}
     state.topics.push(...customTopics.values());
     if(!state.topics.some(t=>t.id===chosenTopic)) chosenTopic=state.topic;
     el('testLink').href='/#test='+state.previewKey+'&topic='+encodeURIComponent(chosenTopic);
@@ -133,15 +158,11 @@ async function openDay(n){
   if(!el('popup').open)el('popup').showModal();
   el('notice').textContent='Opening your door…';
   if(demo){
-    if(n>samples.length){el('notice').textContent='Doors 1, 2 and 3 are open in this sample calendar.';return}
-    const [scene,note]=samples[n-1];
+    const [scene,note]=samples[n-1]||[sampleScenes[(n-4)%sampleScenes.length],''];
     const img=new Image();img.src='/'+themeImage(scene)+'.webp';img.alt=scene;
     el('series').textContent=scene;el('media').replaceChildren(img);
     el('postNote').textContent=note;el('postNote').hidden=false;el('card').hidden=false;el('notice').textContent='';
     opened.add(n);saveProgress();showOpened(el('door-'+n),n);updateJourney();return;
-  }
-  if(!state.guest && Date.now()<Date.UTC(2026,11,n) && n>state.unlocked){
-    el('notice').textContent='This door opens on '+n+' December at midnight UK time.';return;
   }
   try{
     const query=new URLSearchParams({card:'1',day:n,topic:chosenTopic});
@@ -159,9 +180,9 @@ async function openDay(n){
     el('series').textContent=card.topic;
     if(card.media){
       const animation=new Image();
-      animation.alt=card.topic+' animation for '+n+' December';
+      animation.alt=card.media.title||card.topic;
       animation.onerror=()=>animation.replaceWith('This animation is temporarily unavailable.');
-      animation.src='https://media.giphy.com/media/'+encodeURIComponent(card.media.id)+'/giphy.gif';
+      animation.src=mediaUrl(card.media);
       el('media').replaceChildren(animation);
     }
     el('card').hidden=false;
@@ -176,7 +197,7 @@ async function openDay(n){
 el('popup').addEventListener('close',()=>{request++;el('media').replaceChildren()});
 el('close').onclick=()=>el('popup').close();
 el('share').onclick=async()=>{
-  const url=location.origin+'/#gift='+state.guest+'&topic='+encodeURIComponent(chosenTopic);
+  const url=shareOrigin+'/#gift='+state.guest+'&topic='+encodeURIComponent(chosenTopic);
   try{await navigator.clipboard.writeText(url);el('share').textContent='Guest link copied'}catch{prompt('Copy your guest link',url)}
 };
 const input=el('upload').querySelector('input');
@@ -197,6 +218,15 @@ input.onchange=async()=>{
   }catch{el('notice').textContent='Could not save this picture. Try a JPEG or PNG and check your connection.'}
   finally{URL.revokeObjectURL(src);input.disabled=false}
 };
+function showAdminHome(){
+  let adminHash=params.has('admin')?location.hash:'';
+  try{adminHash=adminHash||sessionStorage.getItem('calendarAdminHome')||''}catch{}
+  if(!adminHash.startsWith('#admin='))return;
+  const home=el('adminHome');
+  home.hidden=false;
+  home.onclick=()=>{location.hash=adminHash;location.reload()};
+}
+showAdminHome();
 refresh().catch(e=>el('hint').textContent=e.message);
 
 el('topics').onchange=e=>{
@@ -219,3 +249,8 @@ el('discover').onsubmit=async e=>{
   }catch(error){el('saved').textContent=error.message}
   finally{button.disabled=false;el('share').disabled=false}
 };
+
+
+function mediaUrl(media,thumb=false){
+  return media.scene?'/'+themeImage(media.scene)+'.webp':'https://media.giphy.com/media/'+encodeURIComponent(media.id)+(thumb?'/200w_s.gif':'/giphy.gif');
+}

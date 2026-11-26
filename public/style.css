@@ -33,3 +33,17 @@ header,footer{color:#f7dfa8;border-color:#68768a}.mast,.mast h1{color:#fff2d4}.m
 #journey{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin:10px 0 14px}#progressText{color:#e9edf0;font-size:14px}#doorProgress{width:90px;height:6px;accent-color:#e3c185}#nextDoor{border:1px solid #ebcf96;background:#f5e0b4;color:#162f46;padding:8px 15px;border-radius:4px;font:600 15px/1.4 inherit;min-height:44px}#postNote{color:#53352a}
 
 #samplePicker{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;margin-bottom:18px}#samplePicker button{padding:9px 14px;background:transparent;color:#ffe0a2;border:1px solid #ab916a;border-radius:4px;min-height:44px}#samplePicker select{max-width:100%;min-height:44px}
+
+
+header nav{display:flex;align-items:center;gap:16px}
+#adminHome{display:inline-flex;gap:8px;align-items:center;justify-content:center;padding:6px 16px;min-height:44px;border:1px solid #cca96e;border-radius:24px;background:#203b55;color:#fff0ce;font:600 16px Georgia,serif;cursor:pointer}
+#adminHome span{font-size:25px;line-height:1}
+#adminHome:hover{background:#344f68}
+[hidden]{display:none!important}
+#studio{margin:0 auto 28px;width:min(100%,1040px);padding:clamp(16px,3vw,36px);box-shadow:0 12px 36px #06172955}
+#studio h2{margin:0 0 16px;font:normal clamp(26px,3vw,38px) Georgia,serif}
+#studio fieldset{padding:clamp(14px,2vw,24px);gap:16px;border-radius:8px;align-items:start}
+#studio .personalise,#studio label:has(textarea),#studio #build{grid-column:1/-1}
+#studio .artSample{height:clamp(110px,14vw,175px)}
+@media(min-width:900px){.calendar{margin-inline:auto}.street{max-height:78vh}#delivery{margin-top:24px}#lookup{align-items:end}}
+@media(max-width:540px){header nav>span{display:none}header nav{margin-left:auto}#studio form{max-width:100%}}
