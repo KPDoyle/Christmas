@@ -88,8 +88,8 @@ function display(c){
     return tile;
   }));
   const url=shareOrigin+'/#calendar='+c.invite;
-  el('inviteUrl').value=url;el('previewInvite').href='/#calendar='+c.test;
-  el('previewInvite').onclick=e=>{e.preventDefault();location.hash='calendar='+c.test;location.reload()};
+  el('inviteUrl').value=url;el('previewInvite').href='/#calendar='+c.test+'&preview=1';
+  el('previewInvite').onclick=e=>{e.preventDefault();location.hash='calendar='+c.test+'&preview=1';location.reload()};
   el('mailInvite').href='mailto:'+encodeURIComponent(c.email)+'?subject='+encodeURIComponent('Your Christmas advent calendar')+'&body='+encodeURIComponent('A little Christmas surprise for you. Open a window each day in December.\n\n'+url);
   let option=Array.from(el('library').options).find(o=>o.value===c.id);
   if(!option){option=new Option(c.email,c.id);el('library').add(option)}
@@ -142,12 +142,13 @@ el('recipientPhoto').onchange=e=>{const file=e.target.files[0];if(!file)return;w
     await api(current.id,post({photo:cv.toDataURL('image/jpeg',.83).split(',')[1]}),el('editDay').value);status.textContent='Photo saved to this recipient’s window.';
   }finally{URL.revokeObjectURL(src);el('recipientPhoto').value=''}
 })};
-api().then(data=>{
+api().then(async data=>{
   studio.hidden=false;
   opts(el('calStyle'),data.styles);opts(el('doorStyle'),data.styles);opts(el('calBg'),data.backgrounds);opts(el('doorBg'),data.backgrounds);
   el('doorBg').add(new Option('Use calendar background',''),0);
   for(let i=1;i<=25;i++)el('editDay').add(new Option(i+' December',String(i)));
   for(const c of data.calendars)el('library').add(new Option(c.email+' · '+c.id.slice(-6),c.id));
-  display(null);
+  const edit=params.get('edit');
+  if(edit && data.calendars.some(c=>c.id===edit))await open(edit);else display(null);
 }).catch(e=>{studio.hidden=false;status.textContent=e.message});
 })();

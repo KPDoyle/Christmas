@@ -131,6 +131,7 @@ async function refresh(){
     street.dataset.theme=theme;
   }
   if(state.preview){
+    if(recipient){const home=el('adminHome');home.hidden=false;home.onclick=()=>{location.hash='admin=session&edit='+encodeURIComponent(recipient.split('.')[0]);location.reload()}}
     el('mode').textContent='TEST CALENDAR';
     el('hint').textContent='All 25 doors are open for testing.';
   }
@@ -232,6 +233,7 @@ input.onchange=async()=>{
 };
 function showAdminHome(){
   let adminHash=params.has('admin')?location.hash:'';
+  if(recipient && params.get('preview')==='1')adminHash='#admin=session&edit='+encodeURIComponent(recipient.split('.')[0]);
   try{adminHash=adminHash||sessionStorage.getItem('calendarAdminHome')||''}catch{}
   if(!adminHash.startsWith('#admin='))return;
   const home=el('adminHome');
