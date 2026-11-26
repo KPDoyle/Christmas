@@ -3,7 +3,6 @@ import {get,put,list,del} from '@vercel/blob';
 import {randomBytes,createHmac} from 'node:crypto';
 import {findGifs,chooseDoorMedia} from '../lib/discovery.js';
 
-const styles=['Traditional','Humorous','Heartwarming','Playful','Scenic'];
 import {backgrounds,calendarBackgrounds,backgroundGroups,rotationFor} from '../lib/backgrounds.js';
 import {accountSession} from '../lib/owner/session.js';
 const prefix='recipient-calendars/';
@@ -18,7 +17,7 @@ async function read(path){
 }
 const bad=message=>Object.assign(new Error(message),{status:400});
 function requireChoice(value,options){
-  if(!options.includes(value))throw bad('Choose a listed style.');
+  if(!options.includes(value))throw bad('Choose a listed background.');
   return value;
 }
 function personalText(value,max){
@@ -34,14 +33,14 @@ function categories(value){
 async function populate(doors,indexes){
   const groups=new Map();
   for(const i of indexes){
-    const d=doors[i],key=JSON.stringify([d.category,d.style]);
+    const d=doors[i],key=d.category;
     if(!groups.has(key))groups.set(key,[]);
     groups.get(key).push(i);
   }
   const used=new Set(doors.filter((_,i)=>!indexes.includes(i)).map(d=>d.media?.id));
   await Promise.all([...groups].map(async ([,slots])=>{
     const first=doors[slots[0]];
-    const found=await findGifs(first.category,{style:first.style,needed:25,exclude:used});
+    const found=await findGifs(first.category,{needed:25,exclude:used});
     for(const i of slots){
       const clip=chooseDoorMedia(found,used,i);
       doors[i].media=clip;used.add(clip.id);
@@ -70,7 +69,7 @@ export default async function handler(req,res){
         calendars.push(...items.filter(owns).map(c=>({id:c.id,email:c.email})));
         cursor=batch.hasMore?batch.cursor:null;
       }while(cursor);
-      return res.json({calendars,styles,backgrounds,calendarBackgrounds,backgroundGroups});
+      return res.json({calendars,backgrounds,calendarBackgrounds,backgroundGroups});
     }
     const c=id?await read(pathFor(id)):null;
     if(admin&&c&&!owns(c))return res.status(404).send('Calendar not found.');
@@ -121,13 +120,13 @@ export default async function handler(req,res){
     let next;
     if(day){
       if(!c)throw bad('Select a calendar.');
-      const category=categories([input.category])[0],style=requireChoice(input.style,styles);
+      const category=categories([input.category])[0];
       const old=c.doors[day-1];
       const background=input.background?requireChoice(input.background,backgrounds):'';
       next={...c,doors:[...c.doors]};
-      next.doors[day-1]={...old,category,style,background,note:personalText(input.note??old.note,320),custom:true};
+      next.doors[day-1]={...old,category,background,note:personalText(input.note??old.note,320),custom:true};
       if(input.browse){
-        const matches=await findGifs(category,{style,needed:25,exclude:new Set([old.media?.id])});
+        const matches=await findGifs(category,{needed:25,exclude:new Set([old.media?.id])});
         return res.json({options:matches.map(media=>({media,proof:signature(JSON.stringify([id,day,c.version,category,media]),'animation-option')}))});
       }
       if(input.selection){
@@ -136,29 +135,29 @@ export default async function handler(req,res){
         next.doors[day-1].media=media;
         next.doors[day-1].preferAnimation=true;
       }else if(input.replace){
-        const alternatives=await findGifs(category,{style,needed:25,exclude:new Set([old.media?.id])});
+        const alternatives=await findGifs(category,{needed:25,exclude:new Set([old.media?.id])});
         const used=new Set(c.doors.map(d=>d.media?.id));
         const replacement=alternatives.find(m=>!used.has(m.id))||alternatives[0];
         if(!replacement)return res.status(422).send('No different animation was found. Your current window is still saved. Try another interest or upload a photo.');
         next.doors[day-1].media=replacement;
         next.doors[day-1].preferAnimation=true;
-      }else if(category!==old.category||style!==old.style)await populate(next.doors,[day-1]);
+      }else if(category!==old.category)await populate(next.doors,[day-1]);
     }else{
       const email=String(input.email||'').trim();
       if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254)throw bad('Enter a valid email.');
-      const interests=(input.interests==null || (Array.isArray(input.interests)&&!input.interests.length))?[]:categories(input.interests),style=requireChoice(input.style,styles),background=requireChoice(input.background,backgrounds);
+      const interests=(input.interests==null || (Array.isArray(input.interests)&&!input.interests.length))?[]:categories(input.interests),background=requireChoice(input.background,backgrounds);
       const indexes=[];
       const doors=Array.from({length:25},(_,i)=>{
         const old=c?.doors[i],category=interests.length?interests[i%interests.length]:'Christmas';
         if(!interests.length && !old?.custom){
           const scene=backgrounds[i%backgrounds.length];
-          return {category,style,background:'',note:old?.note||'',custom:false,media:{id:'scene:'+scene,scene,title:scene,matchType:'festive'}};
+          return {category,background:'',note:old?.note||'',custom:false,media:{id:'scene:'+scene,scene,title:scene,matchType:'festive'}};
         }
-        if(old&&(old.custom||(c.interests?.length&&old.category===category&&old.style===style)))return old;
-        indexes.push(i);return {category,style,background:'',note:old?.note||'',custom:false};
+        if(old&&(old.custom||(c.interests?.length&&old.category===category)))return old;
+        indexes.push(i);return {category,background:'',note:old?.note||'',custom:false};
       });
       await populate(doors,indexes);
-      next={id:c?.id||randomBytes(16).toString('hex'),email,interests,style,background,doors,recipientName:personalText(input.recipientName??c?.recipientName,60),senderName:personalText(input.senderName??c?.senderName,60),dedication:personalText(input.dedication??c?.dedication,400)};
+      next={id:c?.id||randomBytes(16).toString('hex'),email,interests,background,doors,recipientName:personalText(input.recipientName??c?.recipientName,60),senderName:personalText(input.senderName??c?.senderName,60),dedication:personalText(input.dedication??c?.dedication,400)};
     }
     next.organiser=session.account.email;
     next.version=randomBytes(12).toString('hex');

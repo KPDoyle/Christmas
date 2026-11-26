@@ -35,7 +35,7 @@ function showSection(id){
 for(const button of sectionButtons)button.onclick=()=>showSection(button.dataset.section);
 const drafts=new Map();
 const windowFields=['dayNote'];
-const calendarFields=['recipientEmail','categories','calStyle','calBg','recipientName','senderName','dedication'];
+const calendarFields=['recipientEmail','categories','calBg','recipientName','senderName','dedication'];
 let calendarBaseline='';
 const values=fields=>fields.map(id=>el(id).value);
 const applyValues=(fields,data)=>fields.forEach((id,i)=>{el(id).value=data[i]});
@@ -55,7 +55,6 @@ el('doorForm').addEventListener('input',event=>{if(windowFields.includes(event.t
 function hasEdits(){return drafts.size>0||(calendarBaseline&&calendarChanged())}
 window.addEventListener('beforeunload',event=>{if(hasEdits()){event.preventDefault();event.returnValue=''}});
 
-const opts=(select,values)=>select.replaceChildren(...values.map(v=>new Option(v,v)));
 async function api(id,options={},day){
   const q=new URLSearchParams();
   if(id)q.set('id',id);if(day)q.set('day',day);
@@ -184,14 +183,14 @@ function display(c){
   for(const field of ['recipientName','senderName','dedication'])el(field).value=c?.[field]||'';
   el('deleteCalendar').hidden=!c;
   current=c;el('recipientEmail').value=c?.email||'';el('categories').value=formatInterests(c?.interests||[]);
-  el('calStyle').selectedIndex=0;el('calBg').selectedIndex=0;
+  el('calBg').selectedIndex=0;
   el('studioSections').hidden=!c;
   el('manageCalendar').hidden=!c;
   showSection(c?activeSection:'recipientForm');
   el('delivery').hidden=!c;el('library').value=c?.id||'';
   el('build').textContent=c?'Save calendar changes':'Create calendar';
   if(!c){calendarBaseline=JSON.stringify(values(calendarFields));previewArt();return;}
-  el('calStyle').value=c.style;el('calBg').value=c.background;
+  el('calBg').value=c.background;
   calendarBaseline=JSON.stringify(values(calendarFields));
   el('matchGrid').replaceChildren(...c.doors.map((d,i)=>{
     const tile=document.createElement('button');tile.type='button';tile.className='matchTile';
@@ -237,7 +236,7 @@ el('deleteCalendar').onclick=()=>{
 };
 el('recipientForm').onsubmit=e=>{e.preventDefault();work(async()=>{
   status.textContent='Finding content and preparing the calendar…';
-  const data={recipientName:el('recipientName').value,senderName:el('senderName').value,dedication:el('dedication').value,email:el('recipientEmail').value,interests:parseInterests(el('categories').value),style:el('calStyle').value,background:el('calBg').value,version:current?.version};
+  const data={recipientName:el('recipientName').value,senderName:el('senderName').value,dedication:el('dedication').value,email:el('recipientEmail').value,interests:parseInterests(el('categories').value),background:el('calBg').value,version:current?.version};
   const creating=!current;
   display(await api(current?.id,post(data)));
   if(creating){showSection('windowSection');requestAnimationFrame(()=>el('editDay').focus())}
@@ -265,9 +264,8 @@ function browseAnimations(){
   el('animationFeedback').textContent='Searching…';
   work(async()=>{
     status.textContent='Finding animations…';
-    const door=current.doors[activeDay-1];
     let result;
-    try{result=await api(current.id,post({browse:true,category:topic,style:door.style,version:current.version}),activeDay)}
+    try{result=await api(current.id,post({browse:true,category:topic,version:current.version}),activeDay)}
     catch(error){el('animationFeedback').textContent=error.message;status.textContent='';return}
     resultsTopic=topic;
     options=result.options;
@@ -299,7 +297,7 @@ function saveWindow(selection){
   return work(async()=>{
     const door=current.doors[activeDay-1];
     const category=selection?resultsTopic:door.category;
-    const data={note:selection?door.note:el('dayNote').value,category,style:door.style,background:door.background,selection,version:current.version};
+    const data={note:selection?door.note:el('dayNote').value,category,background:door.background,selection,version:current.version};
     const pendingCalendar=calendarChanged()?values(calendarFields):null;
     const saved=await api(current.id,post(data),activeDay);
     if(selection)updatePhotoTile(activeDay,mediaUrl(saved.doors[activeDay-1].media));
@@ -328,7 +326,7 @@ el('recipientPhoto').onchange=e=>{const file=e.target.files[0];if(!file)return;c
 })};
 api().then(async data=>{
   studio.hidden=false;
-  opts(el('calStyle'),data.styles);el('calBg').replaceChildren(...Object.entries(data.backgroundGroups).map(([label,scenes])=>{
+  el('calBg').replaceChildren(...Object.entries(data.backgroundGroups).map(([label,scenes])=>{
     const group=document.createElement('optgroup');group.label=label;
     group.append(...scenes.map(scene=>new Option(scene,scene)));return group;
   }));
