@@ -63,7 +63,8 @@ function saveProgress(){
 }
 const paintings=["scenes/village-christmas-carollers","scenes/victorian-christmas-by-the-fireside","scenes/christmas-eve-in-london"];
 const street=document.querySelector('.street');
-street.style.setProperty('--street','url(/'+paintings[0]+'.webp)');
+const defaultCalendarScene='Cotswold Christmas';
+street.style.setProperty('--street','url(/'+themeImage(defaultCalendarScene)+'.webp)');
 function themeImage(name){
   return ({'Dickensian London':'carol','Victorian Christmas market':'market','Snowy coaching inn':'inn'})[name] || (name?'scenes/'+name.toLowerCase().replace(/[^a-z0-9]+/g,'-'):'carol');
 }

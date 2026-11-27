@@ -207,7 +207,7 @@ function display(c){
   el('deleteCalendar').hidden=!c;
   el('openStudioPreview').hidden=!c;
   current=c;el('recipientEmail').value=c?.email||'';el('categories').value=formatInterests(c?.interests||[]);
-  el('calBg').selectedIndex=0;
+  backgroundsMenu.value=defaultCalendarScene;
   el('studioSections').hidden=!c;
   showSection(c?activeSection:'recipientForm');
   el('delivery').hidden=!c;el('library').value=c?.id||'';
