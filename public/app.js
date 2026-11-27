@@ -76,17 +76,10 @@ function showOpened(button,n){
 function showGift(){
   const title=document.querySelector('.mast h1'),intro=document.querySelector('.mast p');
   if(demo){
-    el('samplePicker').hidden=false;el('sampleTheme').value=sampleTheme;
-    el('sampleTheme').onchange=e=>{location.hash='sample='+e.target.value;location.reload()};
-    el('shareSample').onclick=async()=>{
-      const url=shareOrigin+'/#sample='+sampleTheme;
-      try{if(navigator.share)await navigator.share({title:'Calendar Post',url});else{await navigator.clipboard.writeText(url);el('shareSample').textContent='Sample link copied'}}
-      catch(e){if(e.name!=='AbortError')prompt('Copy sample link',url)}
-    };
+    el('samplePicker').hidden=false;
     title.textContent='Christmas, made for you.';
     intro.hidden=false;
     intro.textContent='25 illustrated doors filled with their favourite things and messages from you.';
-    el('mode').hidden=false;el('mode').textContent='EXPLORE A SAMPLE GIFT';
   }else if(recipient && state.recipientName){
     title.textContent='Christmas for '+state.recipientName;
   }
@@ -96,7 +89,7 @@ function showGift(){
   el('fromLine').textContent=state.senderName?'From '+state.senderName:'';
 }
 async function refresh(){
-  if(demo)state={unlocked:25,recipientName:'Alex',senderName:'Sam',dedication:({travel:'A December full of places I’d love to explore with you.',food:'For the cook who makes our kitchen the warmest place in December.',stage:'For my favourite person to sit beside when the house lights go down.'})[sampleTheme]};
+  if(demo)state={unlocked:25};
   else {
   const r=await fetch(endpoint,{headers});
   if(!r.ok) throw Error('The calendar could not load. Please refresh.');
