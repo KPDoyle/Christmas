@@ -110,7 +110,6 @@ async function refresh(){
   }
   if(state.preview){
     if(recipient){const home=el('adminHome');home.hidden=false;home.onclick=()=>{location.hash='admin=session&edit='+encodeURIComponent(recipient.split('.')[0]);location.reload()}}
-    el('mode').hidden=false;el('mode').textContent='TEST CALENDAR';
   }
   if(state.guest){
     try{sessionStorage.setItem('calendarAdminHome',location.hash)}catch{}
