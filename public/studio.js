@@ -100,7 +100,7 @@ function parseInterests(input){
 function previewLetter(){
   const name=el('recipientName').value.trim(),sender=el('senderName').value.trim(),message=el('dedication').value.trim();
   el('studioPreviewLetter').hidden=!(name||sender||message);
-  el('previewTo').textContent=name?'Dear '+name+',':'';
+  el('previewTo').textContent=name;
   el('previewMessage').textContent=message;
   el('previewFrom').textContent=sender?'From '+sender:'';
 }
