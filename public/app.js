@@ -64,7 +64,7 @@ function saveProgress(){
 const paintings=["scenes/village-christmas-carollers","scenes/victorian-christmas-by-the-fireside","scenes/christmas-eve-in-london"];
 const street=document.querySelector('.street');
 const defaultCalendarScene='Cotswold Christmas';
-street.style.setProperty('--street','url(/'+themeImage(defaultCalendarScene)+'.webp)');
+street.style.setProperty('--street','url(/hd/'+themeImage(defaultCalendarScene)+'.webp)');
 function themeImage(name){
   return ({'Dickensian London':'carol','Victorian Christmas market':'market','Snowy coaching inn':'inn'})[name] || (name?'scenes/'+name.toLowerCase().replace(/[^a-z0-9]+/g,'-'):'carol');
 }
@@ -99,7 +99,7 @@ async function refresh(){
   showGift();
   if(recipient){
     const theme=themeImage(state.background);
-    street.style.setProperty('--street','url(/'+theme+'.webp)');
+    street.style.setProperty('--street','url(/hd/'+theme+'.webp)');
     street.dataset.theme=theme;
   }
   if(state.preview){

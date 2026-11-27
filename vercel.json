@@ -1,6 +1,6 @@
 {
   "framework": null,
-  "buildCommand": "",
+  "buildCommand": "node scripts/calendar-backgrounds.mjs",
   "outputDirectory": "public",
   "functions": {
     "api/recipients.js": {

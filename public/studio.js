@@ -110,7 +110,7 @@ function previewArt(){
   const selected=el('calBg').value;
   if(!selected)return;
   const theme=themeImage(selected);
-  const imageUrl='/'+theme+'.webp';
+  const imageUrl='/hd/'+theme+'.webp';
   street.style.setProperty('--street','url('+imageUrl+')');
   street.dataset.theme=theme;
   el('calendarArt').src=imageUrl;
