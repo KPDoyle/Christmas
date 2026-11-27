@@ -79,7 +79,7 @@ function showGift(){
     el('samplePicker').hidden=false;
     title.textContent='Christmas, made for you.';
     intro.hidden=false;
-    intro.textContent='25 illustrated doors filled with their favourite things and messages from you.';
+    intro.textContent='25 illustrated windows filled with their favourite things and messages from you.';
   }else if(recipient && state.recipientName){
     title.textContent='Christmas for '+state.recipientName;
   }
