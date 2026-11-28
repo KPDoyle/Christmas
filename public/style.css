@@ -20,9 +20,9 @@ header,footer{color:#f7dfa8;border-color:#68768a}.mast,.mast h1{color:#fff2d4}.m
 @media(max-width:880px){
   header,main,footer{width:calc(100% - 24px)}.street-scroll{overflow:hidden}
   .street{min-width:0;width:100%;aspect-ratio:auto;min-height:clamp(370px,90vw,640px);background-position:center}
-  .street #grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:repeat(5,minmax(44px,1fr));align-items:center;justify-items:center;gap:5px;padding:clamp(8px,3vw,26px)}
-  .street .door,.street .door.opened{position:relative;left:auto!important;top:auto!important;transform:none;order:var(--slot);width:clamp(44px,8vw,58px);height:clamp(46px,9vw,62px)}
-  .street .door:hover,.street .door:focus-visible{transform:translateY(-2px)}
+  .street #grid{display:block;inset:0}
+  .street .door,.street .door.opened{width:clamp(34px,8vw,44px);height:clamp(36px,9vw,46px)}
+  .street .door:hover,.street .door:focus-visible{transform:translate(-50%,-56%)}
   #studio{padding:12px}.mast h1{font-size:clamp(36px,8.5vw,62px)}
 }
 @media(max-width:520px){#studio fieldset,#lookup{grid-template-columns:minmax(0,1fr)}#studio select,#studio input{font-size:16px}header{padding:14px 0}header strong{font-size:21px}#previewInvite{margin:6px 0}}
