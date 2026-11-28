@@ -87,7 +87,7 @@ function showGift(){
   el('letter').hidden=!(state.dedication||state.senderName||state.recipientName);
   el('toLine').textContent=state.recipientName||'';
   el('giftMessage').textContent=state.dedication||'';
-  el('fromLine').textContent=state.senderName?'From '+state.senderName:'';
+  el('fromLine').textContent=state.senderName||'';
 }
 async function refresh(){
   if(demo)state={unlocked:25};
