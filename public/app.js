@@ -85,7 +85,7 @@ function showGift(){
     title.textContent='Christmas for '+state.recipientName;
   }
   el('letter').hidden=!(state.dedication||state.senderName||state.recipientName);
-  el('toLine').textContent=state.recipientName||'';
+  el('toLine').textContent=state.recipientName?'To '+state.recipientName:'';
   el('giftMessage').textContent=state.dedication||'';
   el('fromLine').textContent=state.senderName||'';
 }
