@@ -37,7 +37,7 @@ async function load(){
   if(resetToken){show('resetForm','Reset your password');return}
   const r=await fetch('/api/owner?action=status',{credentials:'same-origin'});
   const s=await r.json();
-  if(s.loggedIn){$('ownerEmail').textContent=s.email;$('senderSettings').hidden=!s.sender;if(s.sender)renderSender(s.sender);show('dashboard','Account settings');return}
+  if(s.loggedIn){if(location.pathname==='/admin'){location.replace('/#admin=session');return}$('ownerEmail').textContent=s.email;$('senderSettings').hidden=!s.sender;if(s.sender)renderSender(s.sender);show('dashboard','Account settings');return}
   $('ownerSetup').hidden=!s.setupRequired;
   if(hash.has('signup')){show('signupForm','Create your organiser account');return}
   show('loginForm','Calendar Creator Sign-in');
