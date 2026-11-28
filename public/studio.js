@@ -25,7 +25,7 @@ fetch('/api/owner?action=status',{credentials:'same-origin'}).then(r=>r.ok?r.jso
   if(warn)note.style.cssText='background:#fff3cd;color:#5a4300;border:1px solid #c79100;padding:.6rem;border-radius:.3rem';
   if(warn)studio.prepend(note);else el('accountSettings').append(note);
 }).catch(()=>{});
-let current=null,busy=false,activeDay=1,pendingBackgroundFile=null,pendingBackgroundUrl='';
+let current=null,busy=false,activeDay=1,pendingBackgroundFile=null,pendingBackgroundUrl='',clearCustomBackgroundOnSave=false;
 let creatingCalendar=false;
 function updatePreviewContext(){
   const drafting=!current && (creatingCalendar || (calendarBaseline && calendarChanged()));
@@ -110,13 +110,21 @@ function previewArt(){
   const selected=el('calBg').value;
   if(!selected)return;
   const theme=themeImage(selected);
-  const imageUrl=pendingBackgroundUrl||(current?.customBackground&&current.customBackgroundUrl)||('/hd/'+theme+'.webp');
+  const showingCustom=Boolean(pendingBackgroundUrl||(current?.customBackground&&!clearCustomBackgroundOnSave));
+  const imageUrl=pendingBackgroundUrl||(showingCustom&&current?.customBackgroundUrl)||('/hd/'+theme+'.webp');
   street.style.setProperty('--street','url("'+imageUrl+'")');
-  street.dataset.theme=pendingBackgroundUrl||current?.customBackground?'custom':theme;
+  street.dataset.theme=showingCustom?'custom':theme;
   el('calendarArt').src=imageUrl;
-  el('calendarArt').alt=pendingBackgroundUrl||current?.customBackground?'Your uploaded background':selected;
+  el('calendarArt').alt=showingCustom?'Your uploaded background':selected;
 }
-el('calBg').addEventListener('change',previewArt);
+el('calBg').addEventListener('change',()=>{
+  if(pendingBackgroundUrl){URL.revokeObjectURL(pendingBackgroundUrl);pendingBackgroundUrl='';}
+  pendingBackgroundFile=null;
+  el('customBackgroundFile').value='';
+  clearCustomBackgroundOnSave=Boolean(current?.customBackground);
+  el('customBackgroundStatus').textContent=clearCustomBackgroundOnSave?'The selected scene will replace your uploaded background when saved.':'';
+  previewArt();
+});
 el('animationMode').onclick=()=>{
   clearChoices();
   el('animationMode').setAttribute('aria-expanded','true');
@@ -191,6 +199,7 @@ function updatePhotoTile(day,src){
   }
 }
 function display(c){
+  clearCustomBackgroundOnSave=false;
   if(studioCalendarId!==(c?.id||'')){
     photoRequest++;showPhoto(null);doorPhotos.clear();
     document.querySelectorAll('.street .door').forEach(tile=>tile.style.removeProperty('--uploaded-photo'));
@@ -276,6 +285,7 @@ async function uploadCustomBackground(file){
 }
 el('customBackgroundFile').onchange=event=>{
   const file=event.target.files?.[0];if(!file)return;
+  clearCustomBackgroundOnSave=false;
   pendingBackgroundFile=file;
   if(pendingBackgroundUrl)URL.revokeObjectURL(pendingBackgroundUrl);
   pendingBackgroundUrl=URL.createObjectURL(file);
@@ -294,15 +304,28 @@ el('clearCustomBackground').onclick=()=>work(async()=>{
 });
 el('recipientForm').onsubmit=e=>{e.preventDefault();work(async()=>{
   status.textContent='Finding content and preparing the calendar…';
-  const data={recipientName:el('recipientName').value,senderName:el('senderName').value,dedication:el('dedication').value,email:el('recipientEmail').value,interests:parseInterests(el('categories').value),background:el('calBg').value,version:current?.version};
   const creating=!current;
-  display(await api(current?.id,post(data)));
+  const shouldClearCustomBackground=clearCustomBackgroundOnSave&&Boolean(current?.customBackground);
+  const data={recipientName:el('recipientName').value,senderName:el('senderName').value,dedication:el('dedication').value,email:el('recipientEmail').value,interests:parseInterests(el('categories').value),background:el('calBg').value,version:current?.version};
+  const saved=await api(current?.id,post(data));
   if(creating){showSection('windowSection');requestAnimationFrame(()=>el('editDay').focus())}
+  if(shouldClearCustomBackground&&saved.customBackground){
+    try{
+      const cleared=await api(saved.id,post({clearCustomBackground:true,version:saved.version}),undefined,{background:'1'});
+      display(cleared);
+      el('customBackgroundStatus').textContent='Using the selected background scene.';
+    }catch{
+      display(saved);
+      clearCustomBackgroundOnSave=true;
+      previewArt();
+      throw Error('Calendar settings were saved, but the uploaded background could not be cleared. Save again to retry.');
+    }
+  }else display(saved);
   if(pendingBackgroundFile){
     el('customBackgroundStatus').textContent='Uploading your background…';
-    const saved=await uploadCustomBackground(pendingBackgroundFile);
+    const uploaded=await uploadCustomBackground(pendingBackgroundFile);
     pendingBackgroundFile=null;if(pendingBackgroundUrl)URL.revokeObjectURL(pendingBackgroundUrl);pendingBackgroundUrl='';
-    display(saved);
+    display(uploaded);
   }
   status.textContent='Calendar saved. Your private invitation is ready.';
 })};
