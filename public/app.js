@@ -99,8 +99,8 @@ async function refresh(){
   showGift();
   if(recipient){
     const theme=themeImage(state.background);
-    street.style.setProperty('--street','url(/hd/'+theme+'.webp)');
-    street.dataset.theme=theme;
+    street.style.setProperty('--street',state.customBackgroundUrl?'url("'+state.customBackgroundUrl+'")':'url(/hd/'+theme+'.webp)');
+    street.dataset.theme=state.customBackgroundUrl?'custom':theme;
   }
   if(state.preview){
     if(recipient){const home=el('adminHome');home.hidden=false;home.onclick=()=>{location.hash='admin=session&edit='+encodeURIComponent(recipient.split('.')[0]);location.reload()}}
