@@ -25,7 +25,7 @@ fetch('/api/owner?action=status',{credentials:'same-origin'}).then(r=>r.ok?r.jso
   if(warn)note.style.cssText='background:#fff3cd;color:#5a4300;border:1px solid #c79100;padding:.6rem;border-radius:.3rem';
   if(warn)studio.prepend(note);else el('accountSettings').append(note);
 }).catch(()=>{});
-let current=null,busy=false,activeDay=1;
+let current=null,busy=false,activeDay=1,pendingBackgroundFile=null,pendingBackgroundUrl='';
 let creatingCalendar=false;
 function updatePreviewContext(){
   const drafting=!current && (creatingCalendar || (calendarBaseline && calendarChanged()));
@@ -70,9 +70,10 @@ el('doorForm').addEventListener('input',event=>{if(windowFields.includes(event.t
 function hasEdits(){return drafts.size>0||(calendarBaseline&&calendarChanged())}
 window.addEventListener('beforeunload',event=>{if(hasEdits()){event.preventDefault();event.returnValue=''}});
 
-async function api(id,options={},day){
+async function api(id,options={},day,extra={}){
   const q=new URLSearchParams();
   if(id)q.set('id',id);if(day)q.set('day',day);
+  for(const [key,value] of Object.entries(extra))q.set(key,value);
   const r=await fetch('/api/recipients?'+q,{...options,headers:{...headers,...options.headers}});
   if(!r.ok)throw Error((await r.text()).slice(0,180)||'Unable to open calendar.');
   return r.json();
@@ -110,11 +111,11 @@ function previewArt(){
   const selected=el('calBg').value;
   if(!selected)return;
   const theme=themeImage(selected);
-  const imageUrl='/hd/'+theme+'.webp';
-  street.style.setProperty('--street','url('+imageUrl+')');
-  street.dataset.theme=theme;
+  const imageUrl=pendingBackgroundUrl||(current?.customBackground&&current.customBackgroundUrl)||('/hd/'+theme+'.webp');
+  street.style.setProperty('--street','url("'+imageUrl+'")');
+  street.dataset.theme=pendingBackgroundUrl||current?.customBackground?'custom':theme;
   el('calendarArt').src=imageUrl;
-  el('calendarArt').alt=selected;
+  el('calendarArt').alt=pendingBackgroundUrl||current?.customBackground?'Your uploaded background':selected;
 }
 el('calBg').addEventListener('change',previewArt);
 el('animationMode').onclick=()=>{
@@ -205,6 +206,8 @@ function display(c){
   updateDraftStatus();
   for(const field of ['recipientName','senderName','dedication'])el(field).value=c?.[field]||'';
   el('deleteCalendar').hidden=!c;
+  el('clearCustomBackground').hidden=!c?.customBackground;
+  el('customBackgroundStatus').textContent=c?.customBackground?'Your uploaded background is being used.':'';
   el('openStudioPreview').hidden=!c;
   current=c;el('recipientEmail').value=c?.email||'';el('categories').value=formatInterests(c?.interests||[]);
   backgroundsMenu.value=defaultCalendarScene;
@@ -259,12 +262,49 @@ el('deleteCalendar').onclick=()=>{
     status.textContent='Calendar deleted for '+selected.email+'.';
   });
 };
+async function uploadCustomBackground(file){
+  const source=URL.createObjectURL(file);
+  try{
+    const image=new Image();image.src=source;await image.decode();
+    const scale=Math.min(1,2000/Math.max(image.width,image.height));
+    const canvas=document.createElement('canvas');
+    canvas.width=Math.max(1,Math.round(image.width*scale));canvas.height=Math.max(1,Math.round(image.height*scale));
+    canvas.getContext('2d').drawImage(image,0,0,canvas.width,canvas.height);
+    const encoded=canvas.toDataURL('image/jpeg',.82).split(',')[1];
+    if(encoded.length>3400000)throw Error('This image is too large. Choose a smaller image.');
+    return api(current.id,post({backgroundPhoto:encoded,version:current.version}),undefined,{background:'1'});
+  }finally{URL.revokeObjectURL(source)}
+}
+el('customBackgroundFile').onchange=event=>{
+  const file=event.target.files?.[0];if(!file)return;
+  pendingBackgroundFile=file;
+  if(pendingBackgroundUrl)URL.revokeObjectURL(pendingBackgroundUrl);
+  pendingBackgroundUrl=URL.createObjectURL(file);
+  previewArt();
+  el('customBackgroundStatus').textContent=current?'Uploading your background…':'Your image will upload when you create the calendar.';
+  if(current)work(async()=>{
+    const saved=await uploadCustomBackground(file);
+    pendingBackgroundFile=null;URL.revokeObjectURL(pendingBackgroundUrl);pendingBackgroundUrl='';
+    display(saved);el('customBackgroundStatus').textContent='Your uploaded background is being used.';
+  });
+};
+el('clearCustomBackground').onclick=()=>work(async()=>{
+  if(!current)return;
+  const saved=await api(current.id,post({clearCustomBackground:true,version:current.version}),undefined,{background:'1'});
+  display(saved);status.textContent='Using the selected background scene.';
+});
 el('recipientForm').onsubmit=e=>{e.preventDefault();work(async()=>{
   status.textContent='Finding content and preparing the calendar…';
   const data={recipientName:el('recipientName').value,senderName:el('senderName').value,dedication:el('dedication').value,email:el('recipientEmail').value,interests:parseInterests(el('categories').value),background:el('calBg').value,version:current?.version};
   const creating=!current;
   display(await api(current?.id,post(data)));
   if(creating){showSection('windowSection');requestAnimationFrame(()=>el('editDay').focus())}
+  if(pendingBackgroundFile){
+    el('customBackgroundStatus').textContent='Uploading your background…';
+    const saved=await uploadCustomBackground(pendingBackgroundFile);
+    pendingBackgroundFile=null;if(pendingBackgroundUrl)URL.revokeObjectURL(pendingBackgroundUrl);pendingBackgroundUrl='';
+    display(saved);
+  }
   status.textContent='Calendar saved. Your private invitation is ready.';
 })};
 el('editDay').onchange=door;
