@@ -189,7 +189,7 @@ export default async function handler(req,res){
         indexes.push(i);return {category,background:'',note:old?.note||'',custom:false};
       });
       await populate(doors,indexes);
-      next={id:c?.id||randomBytes(16).toString('hex'),email,interests,background,doors,recipientName:personalText(input.recipientName??c?.recipientName,60),senderName:personalText(input.senderName??c?.senderName,60),dedication:personalText(input.dedication??c?.dedication,400)};
+      next={id:c?.id||randomBytes(16).toString('hex'),email,interests,background,backgroundPath:c?.backgroundPath||'',doors,recipientName:personalText(input.recipientName??c?.recipientName,60),senderName:personalText(input.senderName??c?.senderName,60),dedication:personalText(input.dedication??c?.dedication,400)};
     }
     next.organiser=session.account.email;
     next.version=randomBytes(12).toString('hex');
