@@ -103,7 +103,7 @@ function previewLetter(){
   el('studioPreviewLetter').hidden=!(name||sender||message);
   el('previewTo').textContent=name;
   el('previewMessage').textContent=message;
-  el('previewFrom').textContent=sender?'From '+sender:'';
+  el('previewFrom').textContent=sender;
 }
 for(const id of ['recipientName','senderName','dedication'])el(id).addEventListener('input',previewLetter);
 function previewArt(){
