@@ -34,13 +34,41 @@ const sampleScenes=[
   "Northern lights cabin"
 ];
 const headers={Authorization:'Bearer '+token};
-const windows=[
-  [9,13],[28,16],[48,12],[69,15],[91,12],
-  [14,31],[35,34],[55,30],[75,33],[93,31],
-  [7,50],[26,52],[46,49],[65,52],[86,49],
-  [13,68],[34,70],[54,67],[74,70],[93,68],
-  [8,87],[28,89],[47,86],[67,89],[87,86]
-];
+function scatteredWindows(seed){
+  let value=2166136261;
+  for(const char of seed)value=Math.imul(value^char.charCodeAt(0),16777619);
+  const random=()=>{
+    value+=0x6D2B79F5;
+    let t=value;
+    t=Math.imul(t^(t>>>15),t|1);
+    t^=t+Math.imul(t^(t>>>7),t|61);
+    return ((t^(t>>>14))>>>0)/4294967296;
+  };
+  const points=[];
+  let failed=false;
+  for(let slot=0;slot<25;slot++){
+    let point=null;
+    for(let attempt=0;attempt<2400&&!point;attempt++){
+      const candidate={x:6+random()*88,y:7+random()*86};
+      const clear=points.every(other=>Math.abs(candidate.x-other.x)>=9||Math.abs(candidate.y-other.y)>=10.5);
+      if(clear)point=[Number(candidate.x.toFixed(1)),Number(candidate.y.toFixed(1))];
+    }
+    if(!point){failed=true;break}
+    points.push({x:point[0],y:point[1]});
+  }
+  if(failed){
+    const cells=Array.from({length:25},(_,index)=>index);
+    for(let i=cells.length-1;i>0;i--){
+      const j=Math.floor(random()*(i+1));[cells[i],cells[j]]=[cells[j],cells[i]];
+    }
+    return cells.map(cell=>[
+      Number((14+(cell%5)*18+(random()-.5)*5).toFixed(1)),
+      Number((15+Math.floor(cell/5)*17+(random()-.5)*5).toFixed(1))
+    ]);
+  }
+  return points.map(point=>[point.x,point.y]);
+}
+const windows=scatteredWindows(params.get('edit')||recipient||token||'calendar-post');const windows=scatteredWindows(params.get('edit')||recipient||token||'calendar-post');
 const marks=['🎄','🕯️','🦌','🎁','🛷','🔔','🧦','🍪','⛄','🕊️'];
 let chosenTopic=params.get('topic') || '';
 const customTopics=new Map();
