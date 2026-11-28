@@ -1,4 +1,4 @@
-# Kevin’s Calendar Post
+# December Post (Calendar Post)
 
 Christmas advent calendar hosted on Vercel (project `christmas`, https://calendar-post-kevindoyle.vercel.app).
 Static front end in `public/`, serverless functions in `api/`, data in private Vercel Blob storage.
