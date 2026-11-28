@@ -75,20 +75,9 @@ const customTopics=new Map();
 let state={}, day=0, request=0, objectUrl;
 const role=params.has('admin')?'admin':params.has('test')?'preview':'guest';
 let progressKey='december-post:2026:'+role+':'+(demo?'public-sample-'+sampleTheme:recipient||params.get('topic')||'default');
-function readProgress(){
-  try{return JSON.parse(localStorage.getItem(progressKey))||{}}catch{return {}}
-}
 const opened=new Set();
-function restoreProgress(){
-  opened.clear();
-  for(const n of readProgress().days||[])opened.add(n);
-}
-function saveProgress(){
-  if(role==='admin')return;
-  const latest=readProgress();
-  for(const n of latest.days||[])opened.add(n);
-  try{localStorage.setItem(progressKey,JSON.stringify({days:[...opened]}))}catch{}
-}
+function restoreProgress(){opened.clear()}
+function saveProgress(){}
 const paintings=["scenes/village-christmas-carollers","scenes/victorian-christmas-by-the-fireside","scenes/christmas-eve-in-london"];
 const street=document.querySelector('.street');
 const defaultCalendarScene='Cotswold Christmas';
