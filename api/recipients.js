@@ -8,8 +8,11 @@ import {accountSession} from '../lib/owner/session.js';
 const prefix='recipient-calendars/';
 const pathFor=id=>prefix+id+'.json';
 const signature=(id,role)=>createHmac('sha256',process.env.CALENDAR_KEY).update(role+'/'+id).digest('base64url');
+function backgroundUrl(c){
+  return c.backgroundPath?'/api/recipients?background='+encodeURIComponent(c.id+'.'+signature(c.id,'background'))+'&v='+encodeURIComponent(c.version||''):'';
+}
 function view(c){
-  return {...c,invite:c.id+'.'+signature(c.id,'invite'),test:c.id+'.'+signature(c.id,'preview')};
+  return {...c,customBackground:Boolean(c.backgroundPath),customBackgroundUrl:backgroundUrl(c),invite:c.id+'.'+signature(c.id,'invite'),test:c.id+'.'+signature(c.id,'preview')};
 }
 async function read(path){
   const b=await get(path,{access:'private',useCache:false});
@@ -50,6 +53,17 @@ async function populate(doors,indexes){
 export default async function handler(req,res){
   res.setHeader('Cache-Control','private, no-store');
   if(!process.env.CALENDAR_KEY)return res.status(503).end();
+  const backgroundToken=String(req.query.background||'');
+  if(req.method==='GET'&&backgroundToken&&backgroundToken!=='1'){
+    const [backgroundId,backgroundSig]=backgroundToken.split('.');
+    if(!/^[a-f0-9]{32}$/.test(backgroundId||'')||backgroundSig!==signature(backgroundId,'background'))return res.status(403).end();
+    const calendar=await read(pathFor(backgroundId));
+    if(!calendar?.backgroundPath)return res.status(404).end();
+    const image=await get(calendar.backgroundPath,{access:'private',useCache:false});
+    if(image?.statusCode!==200||!image.stream)return res.status(404).end();
+    res.setHeader('Content-Type','image/jpeg');res.setHeader('Cache-Control','private, no-store');
+    return res.send(Buffer.from(await new Response(image.stream).arrayBuffer()));
+  }
   const auth=req.headers.authorization?.replace(/^Bearer /,'')||'';
   const session=auth==='session'?await accountSession(req):null;
   const admin=Boolean(session);
@@ -80,6 +94,7 @@ export default async function handler(req,res){
       if(c.version!==req.body?.version)return res.status(409).send('Calendar changed. Reopen it before deleting.');
       const photos=await list({prefix:'recipient-photos/'+id+'/',limit:100});
       if(photos.blobs.length)await del(photos.blobs.map(photo=>photo.url));
+      if(c.backgroundPath)await del(c.backgroundPath);
       await del(pathFor(id));
       return res.json({deleted:true});
     }
@@ -96,7 +111,7 @@ export default async function handler(req,res){
         if(photo?.statusCode!==200)return res.status(404).end();
         res.setHeader('Content-Type','image/jpeg');return res.send(Buffer.from(await new Response(photo.stream).arrayBuffer()));
       }
-      return res.json(admin?view(c):{unlocked,preview:test,recipientName:c.recipientName||'',senderName:c.senderName||'',dedication:c.dedication||'',background:c.background,backgrounds:rotationFor(c.background)});
+      return res.json(admin?view(c):{unlocked,preview:test,recipientName:c.recipientName||'',senderName:c.senderName||'',dedication:c.dedication||'',background:c.background,backgrounds:rotationFor(c.background),customBackground:Boolean(c.backgroundPath),customBackgroundUrl:backgroundUrl(c)});
     }
     if(!admin)return res.status(403).end();
     if(req.method==='POST'&&day&&c&&typeof req.body?.photo==='string'){
@@ -117,6 +132,23 @@ export default async function handler(req,res){
     if(req.method!=='POST')return res.status(405).end();
     const input=req.body||{};
     if(c&&input.version!==c.version)return res.status(409).send('Calendar changed. Reopen it before saving.');
+    if(req.query.background==='1'){
+      if(!c||!admin)return res.status(403).end();
+      if(input.clearCustomBackground){
+        if(c.backgroundPath)await del(c.backgroundPath);
+        const next={...c,backgroundPath:'',version:randomBytes(12).toString('hex')};
+        await put(pathFor(id),JSON.stringify(next),{access:'private',allowOverwrite:true,contentType:'application/json'});
+        return res.json(view(next));
+      }
+      const bytes=Buffer.from(String(input.backgroundPhoto||''),'base64');
+      if(bytes.length>2500000||bytes[0]!==255||bytes[1]!==216)throw bad('Choose a smaller background image.');
+      const pathname='recipient-backgrounds/'+id+'/'+randomBytes(12).toString('hex')+'.jpg';
+      await put(pathname,bytes,{access:'private',allowOverwrite:true,contentType:'image/jpeg',cacheControlMaxAge:60});
+      if(c.backgroundPath)await del(c.backgroundPath);
+      const next={...c,backgroundPath:pathname,version:randomBytes(12).toString('hex')};
+      await put(pathFor(id),JSON.stringify(next),{access:'private',allowOverwrite:true,contentType:'application/json'});
+      return res.json(view(next));
+    }
     let next;
     if(day){
       if(!c)throw bad('Select a calendar.');
