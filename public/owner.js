@@ -47,7 +47,7 @@ $('ownerSetup').onclick=()=>show('setupForm','Set up the owner account');
 $('signupLink').onclick=()=>show('signupForm','Create your organiser account');
 $('signupBack').onclick=()=>show('loginForm','Calendar Creator Sign-in');
 $('signupForm').onsubmit=busy($('signupForm'),async()=>{await call('signup',{email:$('signupEmail').value,password:$('signupPassword').value});location.assign('/#admin=session')});
-$('loginForm').onsubmit=busy($('loginForm'),async()=>{await call('login',{email:$('loginEmail').value,password:$('loginPassword').value});say('');$('loginPassword').value='';await load()});
+$('loginForm').onsubmit=busy($('loginForm'),async()=>{await call('login',{email:$('loginEmail').value,password:$('loginPassword').value});location.assign('/#admin=session')});
 $('showForgot').onclick=()=>{say('');$('forgotEmail').value=$('loginEmail').value;show('forgotForm','Reset your password')};
 $('backToLogin').onclick=()=>{say('');show('loginForm','Calendar Creator Sign-in')};
 $('forgotForm').onsubmit=busy($('forgotForm'),async()=>{const r=await call('forgot',{email:$('forgotEmail').value});say(r.message,'ok')});
