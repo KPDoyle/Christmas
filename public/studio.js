@@ -31,8 +31,7 @@ function updatePreviewContext(){
   const drafting=!current && (creatingCalendar || (calendarBaseline && calendarChanged()));
   const kind=current?'saved':drafting?'draft':'sample';
   setStudioPreview(kind,current?.id||'');
-  el('studioPreviewTitle').textContent=current?'Calendar preview · '+current.email:
-    drafting?'New calendar preview':'Sample calendar preview';
+  el('studioPreviewTitle').textContent='Calendar Preview';
 }
 el('recipientForm').addEventListener('input',updatePreviewContext);
 el('recipientForm').addEventListener('change',updatePreviewContext);
