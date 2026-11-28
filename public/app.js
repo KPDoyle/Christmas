@@ -68,7 +68,7 @@ function scatteredWindows(seed){
   }
   return points.map(point=>[point.x,point.y]);
 }
-const windows=scatteredWindows(params.get('edit')||recipient||token||'calendar-post');const windows=scatteredWindows(params.get('edit')||recipient||token||'calendar-post');
+const windows=scatteredWindows(params.get('edit')||recipient||token||'calendar-post');
 const marks=['🎄','🕯️','🦌','🎁','🛷','🔔','🧦','🍪','⛄','🕊️'];
 let chosenTopic=params.get('topic') || '';
 const customTopics=new Map();
